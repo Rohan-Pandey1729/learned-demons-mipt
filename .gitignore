@@ -1,0 +1,6 @@
+__pycache__/
+*.pyc
+slurm/logs/
+results/cells/
+results/sweep.log
+.DS_Store
