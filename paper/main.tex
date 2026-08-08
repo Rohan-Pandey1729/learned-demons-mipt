@@ -173,9 +173,16 @@ feedback-based adaptive circuits.}
 \label{sec:learned}
 
 \todo{CEM linear policy: fencing behavior, fig4 spacetime. PPO
-(circular-conv + GRU, Plackett--Luce top-$k$): does it rediscover the sweep?
-Results pending. The lawnmower is the classical-information baseline to
-beat; oracle-greedy shows myopic quantum information is insufficient.}
+(circular-conv + GRU, Plackett--Luce top-$k$): a short CPU run ($\sim$1.3k
+episodes, $L{=}16$, $k{=}2$) plateaued at $S \approx 3.3$, indistinguishable
+from random placement and below the CEM linear policy (2.77) --- pattern
+diffuse, no sweeping or fencing (fig8). Treat as compute-limited; HYAK run
+(400 updates $\times$ 64 episodes, shaped rewards) pending. If large-scale
+PPO still fails to rediscover the sweep despite staleness features, reframe
+as: myopic shaped rewards make time-coherent placement strategies hard to
+learn --- the lawnmower sits in a poorly-connected region of policy space.
+The lawnmower is the classical-information baseline to beat; oracle-greedy
+shows myopic quantum information is insufficient.}
 
 \section{Discussion}
 \label{sec:discussion}

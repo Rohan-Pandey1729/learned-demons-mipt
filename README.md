@@ -68,7 +68,19 @@ Two early findings worth keeping:
    *static* placement in the literature only modifies criticality; nothing
    found on sweeping placement or a placement-destroyed volume law. One
    must-read before drafting: arXiv 2411.09784 (Reinforced Disentanglers).
-6. **The learned demon "fences."** The CEM-trained linear policy converges to
+6. **Short-run PPO does not yet learn structure (negative result, logged).**
+   An 80-update × 16-episode CPU run (L=16, k=2) of the conv+GRU PPO agent
+   plateaued at S ≈ 3.2–3.3 — statistically indistinguishable from random
+   placement (3.34), worse than CEM-linear (2.77), and nowhere near the
+   lawnmower (1.87); its spacetime pattern is diffuse
+   (`figures/fig8_ppo_pattern.png`). ~1.3k episodes is tiny for PPO, so this
+   is a compute statement, not a capability ceiling: the HYAK run
+   (`slurm/ppo.slurm`, 400×64 episodes, shaped) is the real test. If PPO
+   *still* can't rediscover the sweep given its features include staleness,
+   that itself becomes a paper point about the hardness of learning
+   time-coherent strategies from myopic rewards. Inspect any checkpoint with
+   `scripts/inspect_ppo.py`.
+7. **The learned demon "fences."** The CEM-trained linear policy converges to
    pinning measurements at a few fixed sites, quarantining entanglement into a
    protected bubble (see `figures/fig4_spacetime.png`) — locally smart, globally
    suboptimal for compression. A policy class that can express *moving* patterns
