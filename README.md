@@ -56,7 +56,19 @@ Two early findings worth keeping:
    Tracked in `run_trajectory` (`record_entropy_mean`) and
    `env.finish()["record_entropy_exact"]`. Phase 2 will trade this against
    entanglement steered.
-4. **The learned demon "fences."** The CEM-trained linear policy converges to
+4. **Ballistic scaling collapse (preliminary).** Under sweep placement, p·S vs
+   p·L approximately collapses (linear rise → plateau, `figures/fig6_collapse.png`),
+   supporting "the only scale is 1/p, there is no critical point." Residual
+   spread at the knee needs longer T and larger L (HYAK) before we lean on it.
+5. **The ledger frontier: the sweep dominates.** At L=64 the sweep achieves
+   lower final entropy than random placement at every record-entropy budget
+   (`figures/fig7_ledger.png`) — and NOT because its looks are cheaper (both
+   modes pay ≈1 bit per measurement); it simply spends equally-priced bits in
+   better places. Prior-art check (`paper/related_work.md`): structured
+   *static* placement in the literature only modifies criticality; nothing
+   found on sweeping placement or a placement-destroyed volume law. One
+   must-read before drafting: arXiv 2411.09784 (Reinforced Disentanglers).
+6. **The learned demon "fences."** The CEM-trained linear policy converges to
    pinning measurements at a few fixed sites, quarantining entanglement into a
    protected bubble (see `figures/fig4_spacetime.png`) — locally smart, globally
    suboptimal for compression. A policy class that can express *moving* patterns
@@ -86,8 +98,24 @@ python scripts/run_sweep.py --L 16 32 64 --shots 800 400 200 \
 python scripts/plot_results.py --in results/baseline.json --outdir figures
 ```
 
-On HYAK: edit the account/partition in `slurm/sweep_array.slurm`, then
-`sbatch slurm/sweep_array.slurm` and merge with `scripts/merge_results.py`.
+### HYAK (klone) recipe
+
+```bash
+ssh <uwnetid>@klone.hyak.uw.edu
+git clone https://github.com/Rohan-Pandey1729/learned-demons-mipt.git
+cd learned-demons-mipt
+python3 -m venv ~/venvs/mipt && source ~/venvs/mipt/bin/activate
+pip install -r requirements.txt torch
+# edit YOUR_ACCOUNT in slurm/*.slurm (check with: sacctmgr show assoc user=$USER format=account)
+sbatch --export=ALL,MODE=sweep  slurm/sweep_array.slurm   # priority: no-transition claim
+sbatch --export=ALL,MODE=random slurm/sweep_array.slurm   # p_c baseline at scale
+sbatch slurm/ppo.slurm                                    # the demon vs the lawnmower
+squeue -u $USER                                           # watch
+# when done:
+python scripts/merge_results.py results/cells/sweep_*.json  --out results/lawnmower_hyak.json
+python scripts/merge_results.py results/cells/random_*.json --out results/baseline_hyak.json
+git add results/*_hyak.json results/ppo_L32b4.json && git commit -m "HYAK runs" && git push
+```
 
 ## Physics conventions
 
