@@ -112,6 +112,7 @@ class TrajectoryResult:
     half_cut_entropy: float
     i3: float
     n_measurements: int
+    n_random_outcomes: int = 0  # exact record entropy in bits
     record: list = field(default_factory=list)  # (layer, site, outcome)
 
 
@@ -121,20 +122,33 @@ def run_trajectory(
     T: int,
     rng: np.random.Generator,
     keep_record: bool = False,
+    mode: str = "random",
 ) -> TrajectoryResult:
     """One monitored-circuit trajectory.
 
     Brickwork of uniformly random 2-qubit Cliffords (PBC), followed each layer by
-    projective Z measurement of each site independently with probability p.
+    projective Z measurements at rate p. Placement `mode`:
+
+      "random" — each site independently with probability p (standard model)
+      "sweep"  — m ~ Binomial(L, p) sites per layer, taken as the next m
+                 contiguous sites of a wrapping left-to-right sweep (the
+                 'lawnmower' at continuously tunable rate; same budget in
+                 expectation, different geometry)
+
     Runs T layers, then computes S(L/2) and the tripartite mutual information
-    I3(A:B:C) for four contiguous quarters A,B,C,D.
+    I3(A:B:C) for four contiguous quarters A,B,C,D. Also counts nondeterministic
+    measurement outcomes (peek_z == 0): each contributes exactly 1 bit, so the
+    count IS the record's Shannon entropy (the demon-ledger cost).
     """
     assert L % 4 == 0, "L must be divisible by 4 for the I3 quartering"
+    assert mode in ("random", "sweep")
     sim = stim.TableauSimulator(seed=int(rng.integers(2**63)))
     sim.set_num_qubits(L)
     pool = _get_clifford_pool()
 
     n_meas = 0
+    n_random = 0
+    ptr = 0  # sweep pointer
     record: list = []
     for t in range(T):
         # brickwork layer: even bonds on even t, odd bonds (incl. wrap) on odd t
@@ -144,8 +158,15 @@ def run_trajectory(
             g = pool[int(rng.integers(len(pool)))]
             sim.do_tableau(g, [a, b])
         # measurement layer
-        sites = np.flatnonzero(rng.random(L) < p)
+        if mode == "random":
+            sites = np.flatnonzero(rng.random(L) < p)
+        else:  # sweep
+            m = rng.binomial(L, p)
+            sites = (ptr + np.arange(m)) % L
+            ptr = (ptr + m) % L
         for q in sites:
+            if sim.peek_z(int(q)) == 0:
+                n_random += 1
             out = sim.measure(int(q))
             n_meas += 1
             if keep_record:
@@ -170,6 +191,7 @@ def run_trajectory(
         half_cut_entropy=float(S(half)),
         i3=float(i3),
         n_measurements=n_meas,
+        n_random_outcomes=n_random,
         record=record,
     )
 
@@ -180,26 +202,32 @@ def run_ensemble(
     shots: int,
     T_mult: int = 4,
     seed: int = 0,
+    mode: str = "random",
 ) -> dict:
     """Average `shots` trajectories at (L, p). T = T_mult * L layers."""
     rng = np.random.default_rng(seed)
     T = T_mult * L
-    s_vals, i3_vals, nm_vals = [], [], []
+    s_vals, i3_vals, nm_vals, nr_vals = [], [], [], []
     for _ in range(shots):
-        res = run_trajectory(L, p, T, rng)
+        res = run_trajectory(L, p, T, rng, mode=mode)
         s_vals.append(res.half_cut_entropy)
         i3_vals.append(res.i3)
         nm_vals.append(res.n_measurements)
+        nr_vals.append(res.n_random_outcomes)
     s = np.array(s_vals)
     i3 = np.array(i3_vals)
+    nr = np.array(nr_vals, dtype=float)
     return {
         "L": L,
         "p": p,
         "shots": shots,
         "T": T,
+        "mode": mode,
         "S_half_mean": float(s.mean()),
         "S_half_sem": float(s.std(ddof=1) / np.sqrt(shots)),
         "I3_mean": float(i3.mean()),
         "I3_sem": float(i3.std(ddof=1) / np.sqrt(shots)),
         "meas_per_site_layer": float(np.mean(nm_vals) / (L * T)),
+        "record_entropy_mean": float(nr.mean()),
+        "record_entropy_sem": float(nr.std(ddof=1) / np.sqrt(shots)),
     }

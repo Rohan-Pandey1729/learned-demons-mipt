@@ -56,6 +56,7 @@ class AdaptiveMIPTEnv:
         self.last_outcome = np.zeros(self.L, dtype=int)      # +1/-1/0
         self.ones_count = np.zeros(self.L, dtype=int)
         self.meas_count = np.zeros(self.L, dtype=int)
+        self.n_random_outcomes = 0  # exact record entropy in bits (see finish())
         self.record: list[tuple[int, int, int]] = []
         self._apply_gate_layer()  # agent first acts after seeing one layer
         return self._obs()
@@ -101,6 +102,13 @@ class AdaptiveMIPTEnv:
         sites = np.unique(np.asarray(sites, dtype=int))
         assert len(sites) <= self.budget, f"budget {self.budget} exceeded"
         for q in sites:
+            # In a stabilizer state a Z measurement is either deterministic
+            # (peek_z = ±1, contributes 0 bits of record entropy) or perfectly
+            # random (peek_z = 0, contributes exactly 1 bit). Counting the
+            # random outcomes therefore gives the EXACT Shannon entropy of the
+            # measurement record for this trajectory — the demon-ledger cost.
+            if self.sim.peek_z(int(q)) == 0:
+                self.n_random_outcomes += 1
             out = self.sim.measure(int(q))
             self.record.append((self.t, int(q), int(out)))
             self.last_meas_time[q] = self.t
@@ -142,5 +150,6 @@ class AdaptiveMIPTEnv:
             "I3": float(i3),
             "n_meas": len(self.record),
             "record_entropy_naive": float(rec_H),
+            "record_entropy_exact": float(self.n_random_outcomes),
             "record_len": len(outcomes),
         }

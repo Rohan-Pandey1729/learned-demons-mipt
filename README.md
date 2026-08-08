@@ -1,9 +1,10 @@
 # learned-demons-mipt
 
-**Learned demons at the measurement transition** — reinforcement-learned adaptive
-measurement policies in monitored Clifford circuits, and their
-information-thermodynamic cost. Working repo for the paper (Rohan Pandey & Claude,
-2026). See `PROPOSAL.md` for the research plan.
+**Demons on a Budget: Adaptive Measurement Placement at the Entanglement Phase
+Transition** — reinforcement-learned (and hand-designed) adaptive measurement
+policies in monitored Clifford circuits, and their information-thermodynamic
+cost. Working repo for the paper (Rohan Pandey & Claude, 2026). See
+`PROPOSAL.md` for the research plan.
 
 ## Status
 
@@ -37,7 +38,25 @@ Two early findings worth keeping:
    *quantum-cheating* greedy policy loses badly to the dumb sweep: measuring
    where entanglement currently is, is short-sighted; systematically cutting the
    chain is not.
-2. **The learned demon "fences."** The CEM-trained linear policy converges to
+2. **The lawnmower doesn't just shift the transition — it may abolish it.**
+   Running the sweep at a continuously tunable rate (m ~ Binomial(L, p)
+   contiguous sites per layer), the I3 crossings drift downward with size —
+   (16,32): p ≈ 0.043, (32,64): p ≈ 0.017, (64,128): < 0.01 — and S(L/2)
+   saturates at an L-independent value ~ O(1/p) (see
+   `figures/fig5_phase_shift.png`). Ballistic heuristic: each site is revisited
+   every ~1/p layers regardless of L, so entanglement can only regrow to
+   S ~ v/p between cuts ⇒ area law at ANY fixed p > 0 in the thermodynamic
+   limit. If this holds up at larger L (HYAK), the claim is that placement
+   geometry doesn't move p_c — it removes the volume-law phase entirely at
+   matched budget. Needs: larger L, denser small-p grid, S·p vs pL collapse.
+3. **The demon ledger is now exact.** In stabilizer dynamics every measurement
+   outcome is either deterministic (0 bits) or perfectly random (exactly 1
+   bit), so counting nondeterministic outcomes (`peek_z == 0`) gives the exact
+   Shannon entropy of the record — the Landauer cost of the demon's memory.
+   Tracked in `run_trajectory` (`record_entropy_mean`) and
+   `env.finish()["record_entropy_exact"]`. Phase 2 will trade this against
+   entanglement steered.
+4. **The learned demon "fences."** The CEM-trained linear policy converges to
    pinning measurements at a few fixed sites, quarantining entanglement into a
    protected bubble (see `figures/fig4_spacetime.png`) — locally smart, globally
    suboptimal for compression. A policy class that can express *moving* patterns

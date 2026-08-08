@@ -136,7 +136,7 @@ def evaluate(policy_factory, L: int, budget: int, T: int, shots: int,
         pol = policy_factory(seed * 100_003 + s)
         res.append(rollout(pol, L, budget, T, seed=seed * 999_331 + s,
                            oracle=oracle))
-    keys = ["S_half", "I3", "record_entropy_naive"]
+    keys = ["S_half", "I3", "record_entropy_naive", "record_entropy_exact"]
     out = {k: float(np.mean([r[k] for r in res])) for k in keys}
     out.update({k + "_sem": float(np.std([r[k] for r in res], ddof=1)
                                   / np.sqrt(shots)) for k in keys})

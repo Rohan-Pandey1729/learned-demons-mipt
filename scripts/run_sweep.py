@@ -28,6 +28,8 @@ def main():
                     help="one value per L (same order)")
     ap.add_argument("--p", type=float, nargs="+", required=True)
     ap.add_argument("--T-mult", type=int, default=4)
+    ap.add_argument("--mode", choices=["random", "sweep"], default="random",
+                    help="measurement placement: iid random or lawnmower sweep")
     ap.add_argument("--seed", type=int, default=7)
     ap.add_argument("--workers", type=int, default=os.cpu_count())
     ap.add_argument("--out", type=str, required=True)
@@ -47,14 +49,14 @@ def main():
                 continue
             # deterministic per-cell seed
             seed = args.seed * 1_000_003 + L * 1009 + int(round(p * 10_000))
-            jobs.append((L, p, shots, args.T_mult, seed))
+            jobs.append((L, p, shots, args.T_mult, seed, args.mode))
 
     print(f"{len(jobs)} cells to run, {len(existing)} cached", flush=True)
     t0 = time.time()
     results = list(existing.values())
     with ProcessPoolExecutor(max_workers=args.workers) as ex:
-        futs = {ex.submit(run_ensemble, L, p, shots, T_mult, seed): (L, p)
-                for (L, p, shots, T_mult, seed) in jobs}
+        futs = {ex.submit(run_ensemble, L, p, shots, T_mult, seed, mode): (L, p)
+                for (L, p, shots, T_mult, seed, mode) in jobs}
         for i, fut in enumerate(as_completed(futs)):
             c = fut.result()
             results.append(c)
