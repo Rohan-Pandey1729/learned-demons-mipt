@@ -12,3 +12,7 @@ paper/*.log
 paper/*.out
 paper/main.pdf
 results/ppo.log
+paper/*.fls
+paper/*.fdb_latexmk
+paper/*.synctex.gz
+paper/mainNotes.bib
