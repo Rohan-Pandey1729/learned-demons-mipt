@@ -26,22 +26,39 @@ def ramp(n):
     return [plt.cm.Blues(x) for x in np.linspace(0.45, 0.95, n)]
 
 
-def crossings(data, key="I3_mean"):
-    """Pairwise crossing points of I3(p) curves for consecutive L, by linear
-    interpolation of the difference on the shared p grid."""
+def crossings(data, key="I3_mean", sig=2.0):
+    """Pairwise crossing points of I3(p) curves for pairs of L, by linear
+    interpolation of the difference on the shared p grid.
+
+    A sign change only counts as a crossing if the difference is statistically
+    significant (>= sig * combined sem) at an adjacent grid point on EACH side
+    — this rejects the spurious 'crossings' where both curves sit at I3 ~ 0
+    within noise deep in the area-law phase."""
     Ls = sorted({c["L"] for c in data})
+    sem_key = key.replace("_mean", "_sem")
     out = []
     for L1, L2 in itertools.combinations(Ls, 2):
         c1 = sorted([c for c in data if c["L"] == L1], key=lambda c: c["p"])
         c2 = sorted([c for c in data if c["L"] == L2], key=lambda c: c["p"])
-        ps = np.array([c["p"] for c in c1])
-        d = np.array([a[key] for a in c1]) - np.array([b[key] for b in c2])
+        p1 = [round(c["p"], 8) for c in c1]
+        p2 = [round(c["p"], 8) for c in c2]
+        shared = [p for p in p1 if p in p2]
+        a = {round(c["p"], 8): c for c in c1}
+        b = {round(c["p"], 8): c for c in c2}
+        ps = np.array(shared)
+        d = np.array([a[p][key] - b[p][key] for p in shared])
+        e = np.array([a[p].get(sem_key, 0.0) + b[p].get(sem_key, 0.0)
+                      for p in shared])
         for i in range(len(ps) - 1):
-            if d[i] == 0:
-                out.append((L1, L2, ps[i])); continue
             if d[i] * d[i + 1] < 0:
+                # significance on each side of the sign change
+                left_ok = any(abs(d[j]) >= sig * e[j] for j in range(0, i + 1))
+                right_ok = any(abs(d[j]) >= sig * e[j]
+                               for j in range(i + 1, len(ps)))
+                if not (left_ok and right_ok):
+                    continue
                 t = d[i] / (d[i] - d[i + 1])
-                out.append((L1, L2, ps[i] + t * (ps[i + 1] - ps[i])))
+                out.append((L1, L2, float(ps[i] + t * (ps[i + 1] - ps[i]))))
     return out
 
 

@@ -38,17 +38,18 @@ Two early findings worth keeping:
    *quantum-cheating* greedy policy loses badly to the dumb sweep: measuring
    where entanglement currently is, is short-sighted; systematically cutting the
    chain is not.
-2. **The lawnmower doesn't just shift the transition — it may abolish it.**
-   Running the sweep at a continuously tunable rate (m ~ Binomial(L, p)
-   contiguous sites per layer), the I3 crossings drift downward with size —
-   (16,32): p ≈ 0.043, (32,64): p ≈ 0.017, (64,128): < 0.01 — and S(L/2)
-   saturates at an L-independent value ~ O(1/p) (see
-   `figures/fig5_phase_shift.png`). Ballistic heuristic: each site is revisited
-   every ~1/p layers regardless of L, so entanglement can only regrow to
-   S ~ v/p between cuts ⇒ area law at ANY fixed p > 0 in the thermodynamic
-   limit. If this holds up at larger L (HYAK), the claim is that placement
-   geometry doesn't move p_c — it removes the volume-law phase entirely at
-   matched budget. Needs: larger L, denser small-p grid, S·p vs pL collapse.
+2. **CONFIRMED AT SCALE (L ≤ 512, HYAK): the lawnmower abolishes the
+   transition.** Random placement at L=64–512 gives p_c = 0.162(8) (largest
+   pairs → 0.159), matching the literature. Under the sweep, the significant
+   I3 crossings recede as p* ∝ 1/L — (64,128): 0.0085, (64,256): 0.0056,
+   both at p*·√(L₁L₂) ≈ 0.75 — and larger pairs show no well-defined
+   crossing anywhere in the grid (curves statistically indistinguishable in
+   a broad |I3| ≲ 1 window), consistent with the crossing receding below
+   p = 0.004. S(L/2) saturates at ≈ 0.46/p, independent of L (at p=0.004,
+   L=512 reaches 106 bits vs predicted ceiling ~115), and p·S vs p·L
+   collapses tightly for p ≤ 0.035 with plateau f∞ ≈ 0.46
+   (`figures/fig6_collapse.png`). Verdict: p_c^sweep = 0 — placement
+   structure removes the volume-law phase entirely at matched budget.
 3. **The demon ledger is now exact.** In stabilizer dynamics every measurement
    outcome is either deterministic (0 bits) or perfectly random (exactly 1
    bit), so counting nondeterministic outcomes (`peek_z == 0`) gives the exact

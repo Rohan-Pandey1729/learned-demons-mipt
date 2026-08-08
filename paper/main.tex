@@ -40,9 +40,11 @@ quantum state do far worse. Second, the sweep does not merely shift the
 critical point --- our data are consistent with it \emph{abolishing} the
 volume-law phase: tripartite-mutual-information crossings drift toward
 $p \to 0$ with system size, and the steady-state entropy saturates at an
-$L$-independent value $\sim v/p$, as predicted by a ballistic-regrowth
+$L$-independent value $\simeq 0.46/p$, as predicted by a ballistic-regrowth
 argument in which each site is revisited every $1/p$ layers regardless of
-system size. \todo{firm up with $L \le 512$ data}. Third, we place these
+system size; data for $L \le 512$ collapse onto the predicted single-scale
+form $S = p^{-1} f(pL)$, with finite-size crossings receding as
+$p^\ast \propto 1/L$. Third, we place these
 protocols on an exact information ledger: in stabilizer dynamics every
 measurement outcome is either deterministic or a perfect coin flip, so the
 Shannon entropy of the measurement record --- the demon's minimum memory, and
@@ -128,29 +130,74 @@ Landauer's principle, $k_B T \ln 2$ times it bounds the heat cost of erasing
 the record~\cite{Landauer1961,Bennett1982}. \todo{connect to purification
 framing; possibly relate $\Delta S$ bounds per recorded bit}
 
+\begin{figure*}
+\includegraphics[width=\textwidth]{../figures/fig4_spacetime.png}
+\caption{Entanglement ``spacetime'' $S([0,x))$ vs.\ layer $t$ under four
+placement policies at matched budget ($L{=}24$, $k{=}3$ per layer), with
+measurement events overlaid. Ensemble-mean final entropies in titles.}
+\label{fig:spacetime}
+\end{figure*}
+
 \section{Placement geometry moves --- and removes --- the transition}
 \label{sec:geometry}
 
+\begin{figure}
+\includegraphics[width=\columnwidth]{../figures/fig2_I3_crossing.png}
+\caption{Random placement baseline: $\I_3$ crossings for $L = 64$--$512$
+give $p_c = 0.162(8)$.}
+\label{fig:baseline}
+\end{figure}
+
+\begin{figure}
+\includegraphics[width=\columnwidth]{../figures/fig5_phase_shift.png}
+\caption{Same budget, different geometry: sweep-placement $\I_3$ curves
+(dashed) collapse toward zero far below the random-placement transition
+(solid), and $S$ vs.\ $L$ at fixed $p = 0.1 < p_c$ is flat under the sweep.}
+\label{fig:phaseshift}
+\end{figure}
+
+\begin{figure}
+\includegraphics[width=\columnwidth]{../figures/fig6_collapse.png}
+\caption{Ballistic scaling test: $p\,S$ vs.\ $pL$ collapses sweep-placement
+data for $p \le 0.035$, $L = 64$--$512$ onto a single curve with plateau
+$f_\infty \approx 0.46$.}
+\label{fig:collapse}
+\end{figure}
+
 \subsection{Baseline}
-With random placement we reproduce the known transition at
-$p_c = 0.162 \pm 0.007$ from $\I_3$ crossings at $L = 16$--$64$
-\todo{upgrade to $L \le 512$ HYAK data}, consistent
-with~\cite{Zabalo2020}.
+With random placement, statistically significant pairwise $\I_3$ crossings
+among $L = 64$--$512$ (depth $T = 4L$, up to 2000 trajectories per point)
+cluster at $p_c = 0.162 \pm 0.008$, with the largest-size pairs at
+$p_c \approx 0.159$, consistent with established values for this
+model~\cite{Zabalo2020}.
 
 \subsection{The lawnmower}
-\todo{Figure: fig5 phase shift.} At matched budget the sweep's $\I_3$
-crossings do not converge: pairwise crossings drift downward with size
-[$(16,32)$: $p \approx 0.043$; $(32,64)$: $p \approx 0.017$; $(64,128)$:
-$< 0.01$], and $S(L/2)$ saturates at an $L$-independent value.
+At matched budget the sweep behaves qualitatively differently
+(Fig.~\ref{fig:phaseshift}). Its $\I_3$ crossings do not converge to a
+finite rate: the significant pairwise crossings recede with size ---
+$(64,128)$: $p^\ast = 0.0085$; $(64,256)$: $p^\ast = 0.0056$ --- and satisfy
+$p^\ast \sqrt{L_1 L_2} \approx 0.7$--$0.8$, i.e., $p^\ast \propto 1/L$ at
+fixed $p^\ast L$. For the largest pairs the curves become statistically
+indistinguishable over a broad window in which $|\I_3| \lesssim 1$,
+producing no well-defined crossing at any $p$ in our grid --- consistent
+with the crossing having receded below $p = 0.004$. Meanwhile $S(L/2)$
+saturates at an $L$-independent value: at $p = 0.004$ the $L = 512$ chain
+reaches $S = 106$ bits, close to its predicted ceiling $\simeq 0.46/p = 115$,
+and for $p \ge 0.05$ the entropy is size-independent within error bars
+across $L = 64$--$512$.
 
 \emph{Ballistic argument.} A sweep at rate $p$ revisits any given site every
 $1/p$ layers, independent of $L$. Between visits, entanglement across a cut
 regrows at most ballistically, $S \sim v t$, so the steady state saturates
 at $S_\mathrm{max} \sim v/p$ for any $L \gg 1/p$: an area law at every fixed
-$p > 0$, i.e., $p_c^{\rm sweep} = 0$ in the thermodynamic limit. The scaling
-form $S = p^{-1} f(pL)$ with $f(x) \propto x$ at small $x$ and
-$f \to \mathrm{const}$ collapses our data approximately
-\todo{fig6; quantify residuals; longer $T$ at small $p$}.
+$p > 0$, i.e., $p_c^{\rm sweep} = 0$ in the thermodynamic limit. The
+predicted single-scale form $S = p^{-1} f(pL)$, with $f(x) \propto x$ at
+small $x$ and $f \to f_\infty$ at large $x$, collapses the data tightly for
+$p \le 0.035$ across $L = 64$--$512$ (Fig.~\ref{fig:collapse}), with
+$f_\infty \approx 0.46$; larger rates fall below the plateau, as expected
+from corrections outside the $p \to 0$ scaling regime. \todo{estimate the
+butterfly/entanglement velocity $v$ independently and compare with
+$f_\infty$}
 
 \subsection{Coverage and greed are not the mechanism}
 \todo{Table from README: random 4.31, shuffled coverage 4.12, oracle greedy
@@ -161,7 +208,15 @@ information used greedily loses to a blind sweep.}
 \section{The demon's ledger}
 \label{sec:ledger}
 
-\todo{Figure: fig7. The sweep dominates the $S$-vs-record-entropy frontier at
+\begin{figure}
+\includegraphics[width=\columnwidth]{../figures/fig7_ledger.png}
+\caption{The demon's ledger at $L=64$: the sweep dominates the
+entropy-vs-record-cost frontier (left) while paying the same
+$\approx 1$ bit per measurement as random placement (right).}
+\label{fig:ledger}
+\end{figure}
+
+\todo{Text around fig7. The sweep dominates the $S$-vs-record-entropy frontier at
 every budget; both modes pay $\approx 1$ bit per look. Frame: the demon's
 advantage is allocation, not information price. Discuss Landauer accounting
 and the (non)role of outcome information in an outcome-independent policy:
