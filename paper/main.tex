@@ -1,0 +1,203 @@
+\documentclass[aps,prb,twocolumn,superscriptaddress,nofootinbib]{revtex4-2}
+
+\usepackage{graphicx}
+\usepackage{amsmath,amssymb}
+\usepackage{xcolor}
+\usepackage{hyperref}
+\hypersetup{colorlinks=true, linkcolor=blue!60!black, citecolor=blue!60!black,
+            urlcolor=blue!60!black}
+
+\newcommand{\todo}[1]{\textcolor{red}{[TODO: #1]}}
+\newcommand{\I}{\mathcal{I}}
+
+\begin{document}
+
+\title{Demons on a Budget: Adaptive Measurement Placement\\
+at the Entanglement Phase Transition}
+
+\author{Rohan Pandey}
+\email{rpande.1729@gmail.com}
+\affiliation{Independent researcher, Seattle, WA, USA}
+
+\author{Claude (Anthropic)}
+\affiliation{AI research assistant; contributions detailed in the acknowledgments}
+
+\date{\today}
+
+\begin{abstract}
+Monitored quantum circuits exhibit a measurement-induced phase transition
+(MIPT) between volume-law and area-law entanglement as a function of the
+measurement rate $p$. Almost all studies place measurements at random
+locations; here we ask what an \emph{agent} in control of measurement
+placement can do with the same budget. In brickwork random Clifford circuits
+we compare, at exactly matched budget, random placement against hand-designed
+and reinforcement-learned placement policies. Three results emerge. First,
+placement geometry is more powerful than placement information: a
+deterministic contiguous ``lawnmower'' sweep collapses the half-cut entropy
+by a factor of several relative to random placement, while equal-coverage
+unstructured placement and even a greedy policy with full access to the
+quantum state do far worse. Second, the sweep does not merely shift the
+critical point --- our data are consistent with it \emph{abolishing} the
+volume-law phase: tripartite-mutual-information crossings drift toward
+$p \to 0$ with system size, and the steady-state entropy saturates at an
+$L$-independent value $\sim v/p$, as predicted by a ballistic-regrowth
+argument in which each site is revisited every $1/p$ layers regardless of
+system size. \todo{firm up with $L \le 512$ data}. Third, we place these
+protocols on an exact information ledger: in stabilizer dynamics every
+measurement outcome is either deterministic or a perfect coin flip, so the
+Shannon entropy of the measurement record --- the demon's minimum memory, and
+by Landauer's principle its erasure cost --- is exactly countable. The sweep
+dominates the resulting entropy-vs-record-cost frontier at every budget, yet
+pays the same $\approx 1$ bit per measurement as random placement: the
+demon's advantage lies entirely in \emph{where} it spends equally priced
+bits. Reinforcement-learned policies trained from the classical record
+underperform the sweep in our experiments \todo{update after PPO runs},
+converging instead to a ``fencing'' strategy that quarantines entanglement.
+Our results show that the phase diagram of monitored dynamics is a property
+of the placement \emph{process}, not merely the measurement rate.
+\end{abstract}
+
+\maketitle
+
+\section{Introduction}
+\label{sec:intro}
+
+Local measurements compete with entangling unitary dynamics: below a critical
+measurement rate $p_c$ a monitored many-body system retains volume-law
+entanglement, while above it the state collapses to area
+law~\cite{Li2018,Skinner2019,Chan2019}. This measurement-induced phase
+transition (MIPT) has become a central organizing concept for monitored
+quantum matter~\cite{Fisher2023}, with critical properties mapped out in
+detail for random Clifford circuits~\cite{Gullans2020,Zabalo2020} and
+signatures observed experimentally~\cite{Google2023,Kamakari2025}.
+
+In nearly all of this literature the measured \emph{locations} are chosen
+uniformly at random. The rate $p$ is treated as the control parameter, and
+placement randomness as an innocuous convention. Existing departures from
+uniform randomness are static: quasiperiodic measurement
+sublattices~\cite{Shkolnik2023} and quenched rate
+disorder~\cite{Zabalo2023} modify the critical point and its universality
+class but preserve the transition, while a deterministic spatial
+\emph{gradient} of the rate realizes the transition as coexisting phases in
+a single chain~\cite{Li2026space}. Separately, \emph{adaptive} circuits
+condition unitary feedback on measurement outcomes, producing
+absorbing-state physics~\cite{Iadecola2023,ODea2024,Buchhold2022,Piroli2023},
+and reinforcement-learning agents have been used to disentangle states with
+few projections~\cite{Bao2024}. In all of these, however, \emph{where} to
+measure is not the object being designed. \todo{verify framing of
+\cite{Bao2024} after full-text read}
+
+Here we take placement itself as the resource. Fixing the measurement budget
+--- the expected number of measurements per layer --- we ask how much the
+\emph{geometry and information content} of placement decisions matter, and
+what they cost. We treat the placing agent as a Maxwell demon: it reads (part
+of) the classical measurement record and decides where to look next, and in
+stabilizer dynamics its ledger can be kept exactly, because each outcome
+carries either zero or exactly one bit of Shannon entropy.
+
+Our main findings are summarized in Fig.~\ref{fig:spacetime} and
+Figs.~\ref{fig:phaseshift}--\ref{fig:ledger}. \todo{expand roadmap paragraph}
+
+\section{Model and methods}
+\label{sec:model}
+
+\subsection{Monitored Clifford circuits at fixed budget}
+We consider a chain of $L$ qubits with periodic boundary conditions evolving
+under brickwork layers of independent uniformly random two-qubit Clifford
+gates, interleaved with projective single-site $Z$ measurements. In the
+standard model each site is measured independently with probability $p$ per
+layer. We compare placement \emph{processes} at matched budget $pL$ per
+layer: (i) i.i.d.\ random placement; (ii) the \emph{lawnmower}, which
+measures the next $m \sim \mathrm{Binomial}(L,p)$ contiguous sites of a
+wrapping left-to-right sweep; (iii) equal-coverage controls (round-robin in
+shuffled order); (iv) greedy oracle placement by largest local entanglement;
+and (v) learned policies (Sec.~\ref{sec:learned}) restricted to classical
+record information. Entanglement entropies of stabilizer states are computed
+exactly via $\mathrm{GF}(2)$ ranks~\cite{Fattal2004}; simulations use
+\texttt{stim}~\cite{Gidney2021}. We use circuit depth $T = 4L$ and locate
+transitions with the tripartite mutual information
+$\I_3$~\cite{Gullans2020,Zabalo2020} of contiguous quarters.
+
+\subsection{The exact demon ledger}
+For stabilizer states, a projective $Z$ measurement outcome is either fully
+determined or an unbiased coin flip. The Shannon entropy of the measurement
+record in a given trajectory is therefore exactly the number of
+nondeterministic outcomes --- a quantity we count during simulation. This is
+the minimum memory a demon implementing the policy must write, and by
+Landauer's principle, $k_B T \ln 2$ times it bounds the heat cost of erasing
+the record~\cite{Landauer1961,Bennett1982}. \todo{connect to purification
+framing; possibly relate $\Delta S$ bounds per recorded bit}
+
+\section{Placement geometry moves --- and removes --- the transition}
+\label{sec:geometry}
+
+\subsection{Baseline}
+With random placement we reproduce the known transition at
+$p_c = 0.162 \pm 0.007$ from $\I_3$ crossings at $L = 16$--$64$
+\todo{upgrade to $L \le 512$ HYAK data}, consistent
+with~\cite{Zabalo2020}.
+
+\subsection{The lawnmower}
+\todo{Figure: fig5 phase shift.} At matched budget the sweep's $\I_3$
+crossings do not converge: pairwise crossings drift downward with size
+[$(16,32)$: $p \approx 0.043$; $(32,64)$: $p \approx 0.017$; $(64,128)$:
+$< 0.01$], and $S(L/2)$ saturates at an $L$-independent value.
+
+\emph{Ballistic argument.} A sweep at rate $p$ revisits any given site every
+$1/p$ layers, independent of $L$. Between visits, entanglement across a cut
+regrows at most ballistically, $S \sim v t$, so the steady state saturates
+at $S_\mathrm{max} \sim v/p$ for any $L \gg 1/p$: an area law at every fixed
+$p > 0$, i.e., $p_c^{\rm sweep} = 0$ in the thermodynamic limit. The scaling
+form $S = p^{-1} f(pL)$ with $f(x) \propto x$ at small $x$ and
+$f \to \mathrm{const}$ collapses our data approximately
+\todo{fig6; quantify residuals; longer $T$ at small $p$}.
+
+\subsection{Coverage and greed are not the mechanism}
+\todo{Table from README: random 4.31, shuffled coverage 4.12, oracle greedy
+3.56, learned 3.29, lawnmower 1.25 (all $\pm$ sem), $L=24$, $k=3$, $T=96$.
+Prose: equal coverage without contiguity does nothing; full quantum
+information used greedily loses to a blind sweep.}
+
+\section{The demon's ledger}
+\label{sec:ledger}
+
+\todo{Figure: fig7. The sweep dominates the $S$-vs-record-entropy frontier at
+every budget; both modes pay $\approx 1$ bit per look. Frame: the demon's
+advantage is allocation, not information price. Discuss Landauer accounting
+and the (non)role of outcome information in an outcome-independent policy:
+the sweep needs \emph{no} memory of outcomes at all --- its record can be
+erased trajectory-by-trajectory --- which sharpens the contrast with
+feedback-based adaptive circuits.}
+
+\section{Learned demons}
+\label{sec:learned}
+
+\todo{CEM linear policy: fencing behavior, fig4 spacetime. PPO
+(circular-conv + GRU, Plackett--Luce top-$k$): does it rediscover the sweep?
+Results pending. The lawnmower is the classical-information baseline to
+beat; oracle-greedy shows myopic quantum information is insufficient.}
+
+\section{Discussion}
+\label{sec:discussion}
+
+\todo{Implications: (1) phase diagram of monitored dynamics is
+placement-process dependent; rate alone is not a sufficient control
+parameter. (2) Contrast with static structured placement
+\cite{Shkolnik2023,Zabalo2023}, where the transition survives: time-advancing
+structure is qualitatively different. (3) Practical: entanglement suppression
+per measurement matters for classical simulability and for
+experiments with costly mid-circuit measurement. (4) Open: universality of
+the $pL$ crossover; interacting non-Clifford dynamics; sweeps in 2D;
+optimal placement theory (is the sweep optimal among outcome-independent
+policies?); demon ledger beyond stabilizer circuits.}
+
+\begin{acknowledgments}
+Simulations were performed in part on the HYAK computing cluster at the
+University of Washington. \todo{finalize AI-contribution statement per arXiv
+policy: Claude (Anthropic) contributed literature mapping, code, analysis,
+and drafting under the direction of RP, who verified all results.}
+\end{acknowledgments}
+
+\bibliography{refs}
+
+\end{document}

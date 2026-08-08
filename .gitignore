@@ -4,3 +4,11 @@ slurm/logs/
 results/cells/
 results/sweep.log
 .DS_Store
+
+paper/*.aux
+paper/*.bbl
+paper/*.blg
+paper/*.log
+paper/*.out
+paper/main.pdf
+results/ppo.log
