@@ -62,14 +62,14 @@ def main():
         pdata = json.load(f)
     theta = np.array(pdata["theta_final"])
     ens = pdata.get("eval", {})
-    ens_key = {"random": "random", "learned demon": "learned",
-               "oracle greedy": "oracle-greedy", "lawnmower": "stalest-stable"}
+    ens_key = {"random": "random", "learned linear (CEM)": "learned",
+               "oracle greedy": "oracle-greedy", "sweep": "stalest-stable"}
 
     policies = [
         ("random", RandomPolicy(seed=1), False),
-        ("learned demon", LinearPolicy(theta, seed=1), False),
+        ("learned linear (CEM)", LinearPolicy(theta, seed=1), False),
         ("oracle greedy", OracleGreedyPolicy(None, seed=1), True),
-        ("lawnmower", StalestPolicy(), False),
+        ("sweep", StalestPolicy(), False),
     ]
 
     if args.dark:
@@ -113,8 +113,8 @@ def main():
     cb.ax.tick_params(colors=ink)
     cb.outline.set_visible(False)
     fig.suptitle(
-        f"Where the demon looks — measurement placement at matched budget "
-        f"(L = {args.L}, k = {args.budget}/layer)",
+        f"Measurement placement at matched budget "
+        f"(L = {args.L}, k = {args.budget} per layer)",
         color=ink, fontsize=12, y=1.0)
     fig.savefig(args.out, facecolor=surface, dpi=180, bbox_inches="tight")
     print("wrote", args.out)

@@ -6,8 +6,8 @@
 \usepackage{hyperref}
 \hypersetup{colorlinks=true, linkcolor=blue!60!black, citecolor=blue!60!black,
             urlcolor=blue!60!black}
+\graphicspath{{../figures/}{figures/}}
 
-\newcommand{\todo}[1]{\textcolor{red}{[TODO: #1]}}
 \newcommand{\I}{\mathcal{I}}
 
 \begin{document}
@@ -29,25 +29,27 @@ and treats the rate as the control parameter. We instead fix the
 measurement budget and vary the placement process. In brickwork random
 Clifford circuits we compare random placement against hand-designed and
 reinforcement-learned placement policies at exactly matched budget. We
-report three results. First, placement geometry matters more than placement
-information: a deterministic contiguous sweep reduces the half-cut entropy
-severalfold relative to random placement, while equal-coverage unstructured
-placement and a greedy policy with full access to the quantum state perform
-much worse than the sweep. Second, the sweep eliminates the transition
-rather than shifting it. Tripartite mutual information crossings recede as
-$p^\ast \propto 1/L$, the steady-state entropy saturates at an
-$L$-independent value close to $0.46/p$, and data for $L \le 512$ collapse
-onto the single-scale form $S = p^{-1} f(pL)$ predicted by a ballistic
-regrowth argument. Third, we account for these protocols on an exact
-information ledger. In stabilizer dynamics every measurement outcome is
-either deterministic or a fair coin flip, so the Shannon entropy of the
-measurement record is exactly countable. The sweep dominates the resulting
-entropy-versus-record-cost frontier at every budget while paying the same
-cost of approximately one bit per measurement as random placement. Learned
-policies trained on the classical record underperform the sweep in our
-experiments \todo{update after HYAK PPO run}. We conclude that the phase
-diagram of monitored dynamics is a property of the placement process, not
-only of the measurement rate.
+report three results. First, placement geometry matters more than
+placement information: a deterministic contiguous sweep reduces the
+half-cut entropy severalfold relative to random placement, while
+equal-coverage unstructured placement and a greedy policy with full access
+to the quantum state perform far worse than the sweep. Second, the sweep
+eliminates the transition rather than shifting it. Tripartite mutual
+information crossings recede as $p^\ast \propto 1/L$, the steady-state
+entropy saturates at an $L$-independent value close to $0.46/p$, and data
+for $L \le 512$ collapse onto the single-scale form $S = p^{-1} f(pL)$
+predicted by a ballistic regrowth argument. Third, we account for these
+protocols on an exact information ledger. In stabilizer dynamics every
+measurement outcome is either deterministic or a fair coin flip, so the
+Shannon entropy of the measurement record is exactly countable. The sweep
+dominates the resulting entropy-versus-record-cost frontier at every
+budget while paying the same cost of approximately one bit per measurement
+as random placement. Reinforcement-learned policies trained on the
+classical record do not improve on random placement in our experiments,
+which we attribute to myopic credit assignment rather than to
+expressivity, since the sweep is representable in the policy class. We
+conclude that the phase diagram of monitored dynamics is a property of the
+placement process, not only of the measurement rate.
 \end{abstract}
 
 \maketitle
@@ -62,32 +64,45 @@ law~\cite{Li2018,Skinner2019,Chan2019}. This measurement-induced phase
 transition (MIPT) is a central organizing concept for monitored quantum
 matter~\cite{Fisher2023}. Its critical properties have been mapped out for
 random Clifford circuits~\cite{Gullans2020,Zabalo2020} and its signatures
-have been observed experimentally~\cite{Google2023,Kamakari2025}.
+have been observed experimentally~\cite{Google2023,Feng2026}.
 
 In nearly all of this literature the measured locations are chosen
 uniformly at random. Existing departures from uniform randomness are
-static. Quasiperiodic measurement sublattices~\cite{Shkolnik2023} and
-quenched rate disorder~\cite{Zabalo2023} modify the critical point and its
-universality class but preserve the transition. A deterministic spatial
-gradient of the rate realizes the transition as coexisting phases in a
-single chain~\cite{Li2026space}. Adaptive circuits condition unitary
+static in time. Quasiperiodic measurement sublattices~\cite{Shkolnik2023}
+and quenched rate disorder~\cite{Zabalo2023} modify the critical point and
+its universality class but preserve the transition. A deterministic
+spatial gradient of the rate realizes the transition as coexisting phases
+in a single chain~\cite{Li2026space}. Adaptive circuits condition unitary
 feedback on measurement outcomes and produce absorbing-state
-physics~\cite{Iadecola2023,ODea2024,Buchhold2022,Piroli2023}, and
-reinforcement learning has been used to disentangle states with few
-projections~\cite{Bao2024}. In all of these, the choice of where to measure
-is not the object being designed. \todo{verify framing of \cite{Bao2024}
-after full-text read}
+physics~\cite{Iadecola2023,Sierant2023,ODea2024,Buchhold2022,Piroli2023},
+but the measured locations remain random. Closest to our setting,
+reinforcement learning has been used to find small sets of projective
+measurements that disentangle the output of shallow random circuits; the
+structure found there is temporal, a concentration of measurements in late
+layers at system sizes of order ten qubits, and the steady-state phase
+diagram is not addressed~\cite{Bao2024}. In none of these works is the
+spatial placement process itself the designed object.
 
-In this work we take placement itself as the resource. We fix the expected
-number of measurements per layer and ask how much the geometry and the
+In this work we take placement as the resource. We fix the expected number
+of measurements per layer and ask how much the geometry and the
 information content of placement decisions matter, and what they cost. We
-model the placing agent as a Maxwell demon that reads part of the classical
-measurement record and decides where to look next. In stabilizer dynamics
-the demon's ledger can be kept exactly, because each outcome carries either
-zero or exactly one bit of Shannon entropy.
+model the placing agent as a Maxwell demon that reads part of the
+classical measurement record and decides where to look next. In stabilizer
+dynamics the demon's ledger can be kept exactly, because each outcome
+carries either zero or exactly one bit of Shannon entropy.
 
-Our main results are summarized in Figs.~\ref{fig:spacetime}
-through~\ref{fig:ledger}. \todo{expand roadmap paragraph}
+The paper is organized as follows. Section~\ref{sec:model} defines the
+model, the placement policies, and the exact record-entropy ledger.
+Section~\ref{sec:geometry} contains the main result: at matched budget, a
+deterministic sweeping placement eliminates the volume-law phase, with
+finite-size crossings receding as $1/L$ and a single-parameter scaling
+collapse across $L = 64$ to $512$, and neither coverage nor state
+information reproduces the effect. Section~\ref{sec:ledger} accounts for
+all policies on the information ledger. Section~\ref{sec:learned} shows
+that policies trained by reinforcement learning fail to discover the
+sweep and analyzes why. Section~\ref{sec:discussion} discusses
+implications and open questions. Appendices~\ref{app:numerics}
+and~\ref{app:learning} give numerical and training details.
 
 \section{Model and methods}
 \label{sec:model}
@@ -100,15 +115,18 @@ measurements. In the standard model each site is measured independently
 with probability $p$ per layer. We compare placement processes at matched
 budget $pL$ per layer: (i) i.i.d.\ random placement; (ii) the sweep, which
 measures the next $m \sim \mathrm{Binomial}(L,p)$ contiguous sites of a
-wrapping left-to-right scan; (iii) equal-coverage controls that visit every
-site once per $L/pL$ layers in shuffled order; (iv) greedy oracle placement
-at the sites of largest local entanglement; and (v) learned policies
-restricted to classical record information (Sec.~\ref{sec:learned}). We
-compute entanglement entropies of stabilizer states exactly via
-$\mathrm{GF}(2)$ ranks~\cite{Fattal2004} and simulate with
-\texttt{stim}~\cite{Gidney2021}. We use circuit depth $T = 4L$ and locate
-transitions with the tripartite mutual information $\I_3$ of contiguous
-quarters~\cite{Gullans2020,Zabalo2020}.
+wrapping left-to-right scan; (iii) an equal-coverage control that visits
+every site exactly once per coverage period but in a shuffled order;
+(iv) greedy oracle placement at the sites of largest local entanglement,
+which uses quantum information unavailable to a physical observer; and
+(v) learned policies restricted to classical record information
+(Sec.~\ref{sec:learned}). Entanglement entropies of stabilizer states are
+computed exactly via $\mathrm{GF}(2)$ ranks~\cite{Fattal2004}, and
+simulations use \texttt{stim}~\cite{AaronsonGottesman2004,Gidney2021}. We
+use circuit depth $T = 4L$ and locate transitions with the tripartite
+mutual information $\I_3$ of contiguous quarters, whose crossings for
+different $L$ identify $p_c$~\cite{Gullans2020,Zabalo2020}. Details are
+given in Appendix~\ref{app:numerics}.
 
 \subsection{An exact information ledger}
 The following standard fact makes the demon's ledger exact in stabilizer
@@ -122,27 +140,29 @@ some element of $S$, in which case the two outcomes occur with probability
 $1/2$ each and the outcome carries exactly one bit.
 
 \emph{Proof.} If $\pm Z_q \in S$ the state is an eigenstate of $Z_q$ and
-the outcome is fixed. Otherwise choose $g \in S$ with
-$\{g, Z_q\} = 0$. Then
+the outcome is fixed. Otherwise choose $g \in S$ with $\{g, Z_q\} = 0$.
+Then
 $\langle \psi | Z_q | \psi \rangle
  = \langle \psi | g^\dagger Z_q g | \psi \rangle
  = - \langle \psi | Z_q | \psi \rangle = 0$,
-so the outcomes are unbiased~\cite{AaronsonGottesman2004,Fattal2004}. \hfill$\square$
+so the outcomes are unbiased~\cite{AaronsonGottesman2004,Fattal2004}.
+\hfill$\square$
 
 The Shannon entropy of the measurement record in a trajectory therefore
 equals the number of nondeterministic outcomes, which we count exactly
 during simulation via a pre-measurement determinism check. This number is
 the minimum memory a demon implementing the policy must write. By
 Landauer's principle, $k_B T \ln 2$ times this number bounds the heat cost
-of erasing the record~\cite{Landauer1961,Bennett1982}. \todo{possibly add a
-$\Delta S$-per-recorded-bit inequality and test it against the data}
+of erasing the record~\cite{Landauer1961,Bennett1982}.
 
 \begin{figure*}
-\includegraphics[width=\textwidth]{../figures/fig4_spacetime.png}
+\includegraphics[width=\textwidth]{fig4_spacetime.png}
 \caption{Entanglement profile $S([0,x))$ as a function of cut position $x$
 and layer $t$ under four placement policies at matched budget ($L{=}24$,
-$k{=}3$ per layer). Dots mark measurement events. Titles give ensemble-mean
-final entropies.}
+$k{=}3$ per layer). Dots mark measurement events. Titles give
+ensemble-mean final entropies. The learned linear policy pins measurements
+at fixed sites and fences entanglement into a protected region; the sweep
+produces the lowest entropy of all policies studied.}
 \label{fig:spacetime}
 \end{figure*}
 
@@ -150,14 +170,14 @@ final entropies.}
 \label{sec:geometry}
 
 \begin{figure}
-\includegraphics[width=\columnwidth]{../figures/fig2_I3_crossing.png}
+\includegraphics[width=\columnwidth]{fig2_I3_crossing.png}
 \caption{Random placement baseline. $\I_3$ crossings for $L = 64$--$512$
 give $p_c = 0.162(8)$.}
 \label{fig:baseline}
 \end{figure}
 
 \begin{figure}
-\includegraphics[width=\columnwidth]{../figures/fig5_phase_shift.png}
+\includegraphics[width=\columnwidth]{fig5_phase_shift.png}
 \caption{Identical budget, different geometry. Sweep-placement $\I_3$
 curves (dashed) approach zero far below the random-placement transition
 (solid), and $S$ versus $L$ at fixed $p = 0.1 < p_c$ is flat under the
@@ -166,9 +186,9 @@ sweep.}
 \end{figure}
 
 \begin{figure}
-\includegraphics[width=\columnwidth]{../figures/fig6_collapse.png}
-\caption{Ballistic scaling test. The rescaled entropy $p\,S$ collapses as a
-function of $pL$ for $p \le 0.035$ and $L = 64$--$512$, with plateau
+\includegraphics[width=\columnwidth]{fig6_collapse.png}
+\caption{Ballistic scaling test. The rescaled entropy $p\,S$ collapses as
+a function of $pL$ for $p \le 0.035$ and $L = 64$--$512$, with plateau
 $f_\infty \approx 0.46$.}
 \label{fig:collapse}
 \end{figure}
@@ -176,9 +196,10 @@ $f_\infty \approx 0.46$.}
 \subsection{Baseline}
 With random placement, statistically significant pairwise $\I_3$ crossings
 among $L = 64$--$512$ (depth $T = 4L$, up to 2000 trajectories per point)
-cluster at $p_c = 0.162 \pm 0.008$. The largest-size pairs give
-$p_c \approx 0.159$. Both values agree with established results for this
-model~\cite{Zabalo2020}.
+cluster at $p_c = 0.162 \pm 0.008$, and the largest-size pairs give
+$p_c \approx 0.159$ (Fig.~\ref{fig:baseline}). Both values agree with
+established results for this model~\cite{Zabalo2020}. This validates the
+pipeline at the scales used below.
 
 \subsection{The sweep}
 At matched budget the sweep behaves qualitatively differently
@@ -187,9 +208,9 @@ finite rate. The significant pairwise crossings recede with size: the
 $(64,128)$ pair crosses at $p^\ast = 0.0085$ and the $(64,256)$ pair at
 $p^\ast = 0.0056$, and both satisfy $p^\ast \sqrt{L_1 L_2} \approx 0.75$,
 consistent with $p^\ast \propto 1/L$ at fixed $p^\ast L$. For the largest
-pairs the curves are statistically indistinguishable over a broad window in
-which $|\I_3| \lesssim 1$, and no well-defined crossing exists on our grid.
-This is consistent with the crossing receding below $p = 0.004$. The
+pairs the curves are statistically indistinguishable over a broad window
+in which $|\I_3| \lesssim 1$, and no well-defined crossing exists on our
+grid, consistent with the crossing having receded below $p = 0.004$. The
 half-cut entropy saturates at an $L$-independent value. At $p = 0.004$ the
 $L = 512$ chain reaches $S = 106$ bits, close to the predicted ceiling of
 $0.46/p = 115$ bits, and for $p \ge 0.05$ the entropy is size independent
@@ -198,11 +219,12 @@ within error bars across $L = 64$--$512$.
 These observations follow from a ballistic argument. A sweep at rate $p$
 revisits any given site every $1/p$ layers, independent of $L$. Between
 visits, entanglement across a cut regrows at most ballistically,
-$S \sim v t$, so the steady state saturates at $S_\mathrm{max} \sim v/p$
-for any $L \gg 1/p$. The result is an area law at every fixed $p > 0$, that
-is, $p_c^{\rm sweep} = 0$ in the thermodynamic limit. The argument predicts
-the single-scale form $S = p^{-1} f(pL)$ with $f(x) \propto x$ at small $x$
-and $f \to f_\infty$ at large $x$. This form collapses the data for
+$S \sim v_E t$, so the steady state saturates at
+$S_\mathrm{max} \sim v_E/p$ for any $L \gg 1/p$. The result is an area law
+at every fixed $p > 0$, that is, $p_c^{\rm sweep} = 0$ in the
+thermodynamic limit. The argument predicts the single-scale form
+$S = p^{-1} f(pL)$ with $f(x) \propto x$ at small $x$ and
+$f \to f_\infty$ at large $x$. This form collapses the data for
 $p \le 0.035$ across $L = 64$--$512$ (Fig.~\ref{fig:collapse}), with
 $f_\infty \approx 0.46$. Larger rates fall below the plateau, as expected
 outside the $p \to 0$ scaling regime.
@@ -219,17 +241,42 @@ the entanglement across a cut, and regrowth starts from a nonzero
 remainder. The scaling form itself, which is the substantive claim, does
 not depend on this coefficient.
 
-\subsection{Coverage and greed are not the mechanism}
-\todo{Table from README: random 4.31, shuffled coverage 4.12, oracle greedy
-3.56, learned 3.29, sweep 1.25 (all $\pm$ sem), $L=24$, $k=3$, $T=96$.
-Prose: equal coverage without contiguity performs no better than random;
-full quantum information used greedily loses to a blind sweep.}
+\subsection{Neither coverage nor state information is the mechanism}
+\label{sec:coverage}
+Table~\ref{tab:policies} isolates what makes the sweep effective, at
+$L = 24$, $k = 3$ measurements per layer, and $T = 96$. The shuffled
+coverage control visits every site exactly as often as the sweep but in a
+spatially unstructured order, and it performs no better than random
+placement. Contiguity and sequential order, not coverage, carry the
+effect. The oracle-greedy policy has full access to the quantum state and
+measures the sites of largest local entanglement, and it still loses to
+the blind sweep by a factor of nearly three. Myopic use of complete
+quantum information is worse than a fixed geometric pattern that uses no
+information at all. Figure~\ref{fig:spacetime} shows the corresponding
+entanglement profiles in spacetime.
+
+\begin{table}
+\caption{Final half-cut entropy at matched budget
+($L = 24$, $k = 3$, $T = 96$; mean $\pm$ s.e.m.).}
+\label{tab:policies}
+\begin{ruledtabular}
+\begin{tabular}{lcc}
+Policy & Information used & $\langle S(L/2)\rangle$ [bits] \\
+\hline
+Random placement   & none      & $4.31 \pm 0.08$ \\
+Shuffled coverage  & none      & $4.12 \pm 0.08$ \\
+Oracle greedy      & quantum   & $3.56 \pm 0.09$ \\
+Learned linear (CEM) & classical & $3.29 \pm 0.14$ \\
+Sweep              & none      & $1.25 \pm 0.05$ \\
+\end{tabular}
+\end{ruledtabular}
+\end{table}
 
 \section{The information ledger}
 \label{sec:ledger}
 
 \begin{figure}
-\includegraphics[width=\columnwidth]{../figures/fig7_ledger.png}
+\includegraphics[width=\columnwidth]{fig7_ledger.png}
 \caption{The information ledger at $L=64$. Left: the sweep dominates the
 entropy-versus-record-cost frontier. Right: both placements pay
 approximately one bit per measurement.}
@@ -250,15 +297,15 @@ Two further observations sharpen the point. First, the sweep is outcome
 independent: its placement decisions use no information from the record,
 so the demon needs no working memory for control, and the record can be
 erased as it is written at the Landauer rate without affecting the
-protocol. The entire entanglement suppression in
-Sec.~\ref{sec:geometry} is therefore achieved by a demon with zero
-control-relevant information, which sharpens the contrast with
-feedback-based adaptive circuits, where outcome information drives the
-dynamics~\cite{Iadecola2023,ODea2024,Buchhold2022,Piroli2023}. Second, the
-oracle-greedy policy of Sec.~\ref{sec:geometry} consumes maximal
-information (full state access) and still loses to the sweep, so
-information about the state is neither necessary nor sufficient for
-effective placement at this granularity: geometry is.
+protocol. The entire entanglement suppression in Sec.~\ref{sec:geometry}
+is therefore achieved by a demon with zero control-relevant information,
+which sharpens the contrast with feedback-based adaptive circuits, where
+outcome information drives the
+dynamics~\cite{Iadecola2023,Sierant2023,ODea2024,Buchhold2022,Piroli2023}.
+Second, the oracle-greedy policy of Sec.~\ref{sec:coverage} consumes
+maximal information and still loses to the sweep, so information about the
+state is neither necessary nor sufficient for effective placement at this
+granularity: geometry is.
 
 \section{Learned placement policies}
 \label{sec:learned}
@@ -273,19 +320,21 @@ We train two policy classes to minimize the final half-cut entropy. The
 first is a linear scoring policy (top-$k$ over a linear function of the
 site features) trained with the cross-entropy method. The second is a
 translation-equivariant circular convolutional network with a recurrent
-(GRU) global memory, trained with PPO; actions are sampled without
-replacement through a Plackett--Luce factorization, which gives exact
-log-probabilities. The recurrent state exists precisely so that the policy
-class can express time-advancing patterns such as sweeps. Training used
-400 updates of 64 episodes (25{,}600 episodes) at $L = 32$, $k = 4$,
-$T = 128$, with per-layer entropy-difference reward shaping.
+global memory, trained with proximal policy optimization (PPO); actions
+are sampled without replacement through a Plackett--Luce factorization,
+which gives exact log-probabilities. The recurrent state exists precisely
+so that the policy class can express time-advancing patterns such as
+sweeps. Training used 400 updates of 64 episodes (25{,}600 episodes) at
+$L = 32$, $k = 4$, $T = 128$, with per-layer entropy-difference reward
+shaping. Architecture and hyperparameters are given in
+Appendix~\ref{app:learning}.
 
 Table~\ref{tab:learned} reports matched-budget evaluations. The CEM linear
-policy improves modestly on random placement and converges to a
-``fencing'' strategy: it pins measurements at a small set of fixed sites
-and quarantines entanglement between them (Fig.~\ref{fig:spacetime}).
-Fencing is locally sensible and globally suboptimal. The PPO policy, given
-$19\times$ more episodes and a policy class that contains moving patterns,
+policy improves modestly on random placement and converges to a fencing
+strategy: it pins measurements at a small set of fixed sites and
+quarantines entanglement between them (Fig.~\ref{fig:spacetime}). Fencing
+is locally sensible and globally suboptimal. The PPO policy, given a
+policy class that contains moving patterns and $19\times$ more episodes,
 does not improve on random placement ($5.17 \pm 0.12$ against
 $5.34 \pm 0.08$), and its training curve is flat over the final 300
 updates. Its stochasticity is doing the work: decoding the same policy
@@ -324,22 +373,51 @@ from unstructured starting points, and both of our learners instead find
 the nearest attractor, fencing, which is a static approximation to
 cutting. Learning where to measure is therefore hard not because good
 strategies are complex but because their value is invisible to myopic
-credit assignment. \todo{optional: seed PPO from a sweep-like
-initialization and test stability of the optimum}
+credit assignment.
 
 \section{Discussion}
 \label{sec:discussion}
 
-\todo{Implications: (1) the phase diagram of monitored dynamics depends on
-the placement process; the rate alone is not a sufficient control
-parameter. (2) Contrast with static structured placement
-\cite{Shkolnik2023,Zabalo2023}, where the transition survives: time-advancing
-structure is qualitatively different. (3) Practical: entanglement
-suppression per measurement matters for classical simulability and for
-experiments with costly mid-circuit measurement. (4) Open questions:
-universality of the $pL$ crossover; interacting non-Clifford dynamics;
-sweeps in two dimensions; optimality of the sweep among outcome-independent
-policies; the ledger beyond stabilizer circuits.}
+Our results show that the phase diagram of monitored dynamics is a
+property of the placement process, not only of the measurement rate. The
+existing structured-placement literature, in which quasiperiodic
+sublattices~\cite{Shkolnik2023} and quenched disorder~\cite{Zabalo2023}
+modify the universality class but preserve the transition, might suggest
+that placement structure is a marginal perturbation. The sweep shows the
+opposite: structure that advances in time removes the volume-law phase
+entirely at matched budget. The distinction between static and
+time-advancing structure is therefore qualitative. A static pattern
+leaves unmeasured regions where entanglement survives indefinitely; a
+sweep guarantees that every site is refreshed on the $L$-independent
+timescale $1/p$, and ballistic regrowth cannot outrun it.
+
+Three implications follow. For theory, the measurement rate alone is an
+incomplete control parameter, and statements about the volume-law phase
+implicitly assume unstructured placement. For classical simulation, a
+sweeping measurement schedule keeps monitored Clifford dynamics in a
+low-entanglement regime at rates far below the random-placement
+transition, which may extend to tensor-network simulability of
+non-Clifford monitored systems. For experiments in which mid-circuit
+measurements are slow or costly, entanglement suppression per measurement
+is the relevant figure of merit, and placement geometry delivers more of
+it than either coverage or state knowledge.
+
+Several questions remain open. First, the crossover function $f$ and its
+universality: whether $f$ depends only on the gate ensemble through
+$v_E$, and how the sweep front's partial cutting renormalizes the plateau.
+Second, dimensionality: in two dimensions a sweeping front of measured
+sites is a line, and whether an analogous single-scale collapse holds is
+unknown. Third, optimality: among outcome-independent placement processes
+at fixed budget, whether the sweep minimizes the steady-state entropy, and
+what the corresponding bound is. Fourth, learning: whether curriculum
+schedules, longer-horizon credit assignment, or initialization near
+sweep-like policies make the geometric optimum reachable, which bears on
+the broader question of when reinforcement learning can discover
+temporally coherent control strategies. Finally, the ledger beyond
+stabilizer circuits: for non-Clifford monitored dynamics the record
+entropy is no longer a simple count, and the tradeoff between entanglement
+steered and information recorded becomes a genuine thermodynamic
+optimization.
 
 \begin{acknowledgments}
 Simulations were performed in part on the HYAK computing cluster at the
@@ -347,6 +425,77 @@ University of Washington. AI-based tools were used to assist with
 literature search, code development, data analysis, and manuscript
 preparation; the author directed this work and verified all results.
 \end{acknowledgments}
+
+\section*{Data and code availability}
+All simulation code, trained policies, and the data behind every figure
+are available at
+\url{https://github.com/Rohan-Pandey1729/learned-demons-mipt}.
+
+\appendix
+
+\section{Numerical methods}
+\label{app:numerics}
+
+\emph{Circuits.} Chains of $L$ qubits with periodic boundary conditions,
+$L$ divisible by 4. Brickwork layers apply independent uniformly random
+two-qubit Clifford gates to even bonds on even layers and odd bonds
+(including the wrap bond) on odd layers. Projective $Z$ measurements
+follow each gate layer according to the placement process. All runs use
+depth $T = 4L$ from the product initial state $|0\rangle^{\otimes L}$.
+
+\emph{Entropies.} For a pure stabilizer state with generator matrix $G$
+($n$ rows, binary symplectic columns), the entanglement entropy of a
+region $A$ is $S_A = \mathrm{rank}_{\mathrm{GF}(2)}(G|_A) - |A|$
+bits~\cite{Fattal2004}. The tripartite mutual information is
+$\I_3(A{:}B{:}C) = S_A + S_B + S_C - S_{AB} - S_{AC} - S_{BC} + S_{ABC}$
+for contiguous quarters $A, B, C, D$.
+
+\emph{Crossings.} A sign change of
+$\I_3^{(L_1)}(p) - \I_3^{(L_2)}(p)$ between grid points counts as a
+crossing only if the difference exceeds twice the combined standard error
+at some grid point on each side of the change. This rejects spurious
+crossings deep in the area-law regime where both curves vanish within
+noise. Crossing positions are obtained by linear interpolation.
+
+\emph{Statistics.} Trajectory counts per $(L, p)$ point range from 2000
+($L = 64$) to 128 ($L = 512$). Quoted uncertainties are standard errors
+over trajectories; the uncertainty on $p_c$ is the spread of significant
+pairwise crossings.
+
+\emph{Velocity.} $v_E$ is the slope of the ensemble-averaged $S(L/2, t)$
+at $p = 0$, $L = 256$, fit over the central 80\% of a depth-$0.6L$
+window, with the uncertainty given by the spread of per-trajectory
+slopes (16 trajectories).
+
+\section{Learned policy details}
+\label{app:learning}
+
+\emph{Features.} Each site presents five classical features: time since
+the site was last measured and time since either neighbor was last
+measured (both normalized by $L$), the last outcome ($\pm 1$, or 0 if
+never measured), the empirical fraction of $+1$ outcomes at the site, and
+the layer parity.
+
+\emph{CEM linear policy.} Scores are a linear function of the site
+features plus a global mean-feature term (10 parameters); the $k$ highest
+scores are measured. Training used the cross-entropy method with
+population 24 to 32, elite fraction $1/4$, additive noise floor $0.05$,
+and 10 to 12 iterations of 16 to 24 evaluation episodes.
+
+\emph{PPO policy.} Two circular convolutions (kernel 3, 32 channels,
+ReLU) produce per-site embeddings; their mean feeds a GRU cell (32
+hidden units) whose state is broadcast back to every site; a
+$1\times 1$ convolution over the concatenation yields per-site logits,
+and a linear head on the pooled representation yields the value estimate.
+Actions are $k$ sites sampled without replacement by sequential softmax
+(Plackett--Luce), whose log-probability is the sum of the conditional
+log-probabilities. Training: Adam with learning rate $3\times 10^{-4}$,
+discount $\gamma = 0.995$, GAE $\lambda = 0.95$, clip $0.2$, entropy
+bonus $0.01$, value coefficient $0.5$, 4 epochs per update, 64 episodes
+per update, 400 updates. The reward is the per-layer decrease of the
+half-cut entropy, plus the negative final half-cut entropy at the
+terminal step. Reward shaping uses quantum-side information during
+training only; the deployed policy acts on classical features alone.
 
 \bibliography{refs}
 
