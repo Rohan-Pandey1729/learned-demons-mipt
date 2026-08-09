@@ -180,6 +180,8 @@ def main():
     ap.add_argument("--shaped", action="store_true")
     ap.add_argument("--seed", type=int, default=21)
     ap.add_argument("--out", type=str, default=None)
+    ap.add_argument("--save-every", type=int, default=5,
+                    help="checkpoint every N updates (preemption safety)")
     ap.add_argument("--smoke", action="store_true", help="tiny run, no output file")
     args = ap.parse_args()
 
@@ -189,8 +191,18 @@ def main():
     opt = torch.optim.Adam(policy.parameters(), lr=args.lr)
 
     history = []
+    start_update = 0
+    ckpt_path = args.out.replace(".json", "_ckpt.pt") if args.out else None
+    if ckpt_path and os.path.exists(ckpt_path):
+        ck = torch.load(ckpt_path, map_location=device)
+        policy.load_state_dict(ck["policy"])
+        opt.load_state_dict(ck["opt"])
+        history = ck["history"]
+        start_update = ck["update"] + 1
+        print(f"resumed from {ckpt_path} at update {start_update}", flush=True)
+
     t0 = time.time()
-    for u in range(args.updates):
+    for u in range(start_update, args.updates):
         trajs = [collect_episode(policy, args.L, args.budget, args.T,
                                  seed=args.seed * 10_007 + u * 1000 + e,
                                  shaped=args.shaped, device=device)
@@ -202,6 +214,13 @@ def main():
                         "record_H": float(H), "loss": loss})
         print(f"upd {u:3d}  S_half = {S:.3f}  record H = {H:.1f} bits  "
               f"loss = {loss:.3f}  ({time.time()-t0:.0f}s)", flush=True)
+        if ckpt_path and (u % args.save_every == 0 or u == args.updates - 1):
+            os.makedirs(os.path.dirname(ckpt_path), exist_ok=True)
+            torch.save({"policy": policy.state_dict(), "opt": opt.state_dict(),
+                        "update": u, "history": history}, ckpt_path + ".tmp")
+            os.replace(ckpt_path + ".tmp", ckpt_path)  # atomic
+            with open(args.out.replace(".json", "_partial.json"), "w") as f:
+                json.dump({"config": vars(args), "history": history}, f, indent=1)
 
     if args.out:
         os.makedirs(os.path.dirname(args.out), exist_ok=True)
