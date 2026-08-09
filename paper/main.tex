@@ -170,10 +170,19 @@ information is
 \end{equation}
 Boundary-law terms cancel in this combination, so $\I_3 \to 0$ in the
 area-law phase, while in the volume-law phase $\I_3$ is negative and
-extensive. Curves of $\I_3(p)$ for different system sizes cross at the
-critical point, and the crossings of successive size pairs converge to
-$p_c$~\cite{Gullans2020,Zabalo2020}. The drift of these crossings with
-system size is the key diagnostic in Sec.~\ref{sec:geometry}.
+extensive. Near a conventional critical point $\I_3$ obeys the
+finite-size scaling ansatz
+\begin{equation}
+\I_3(p, L) = \Phi\!\left((p - p_c)\, L^{1/\nu}\right),
+\label{eq:fss}
+\end{equation}
+with $\nu$ the correlation-length exponent, so curves for different $L$
+cross at $p = p_c$ and the crossings of successive size pairs converge to
+the critical point~\cite{Gullans2020,Zabalo2020}. A transition exists
+only if these crossings converge to a finite $p_c$; crossings that recede
+toward zero with system size signal the absence of a critical point. The
+behavior of the crossings is the key diagnostic in
+Sec.~\ref{sec:geometry}.
 
 \subsection{Maxwell's demon and Landauer's principle}
 A Maxwell demon is an agent that uses measurement information to reduce
@@ -207,9 +216,18 @@ chain evolves under brickwork layers of independent uniformly random
 two-qubit Clifford gates, interleaved with projective single-site $Z$
 measurements. In the standard model each site is measured independently
 with probability $p$ per layer. We compare placement processes at matched
-budget $pL$ per layer: (i) i.i.d.\ random placement; (ii) the sweep, which
-measures the next $m \sim \mathrm{Binomial}(L,p)$ contiguous sites of a
-wrapping left-to-right scan; (iii) an equal-coverage control that visits
+budget $pL$ per layer: (i) i.i.d.\ random placement; (ii) the sweep,
+which measures a contiguous block that advances around the ring,
+\begin{equation}
+A_t = \{x_t, x_t + 1, \ldots, x_t + m_t - 1\} \bmod L,
+\qquad
+x_{t+1} = x_t + m_t,
+\label{eq:sweep}
+\end{equation}
+with $m_t \sim \mathrm{Binomial}(L, p)$ drawn independently each layer,
+so that $\mathbb{E}\,|A_t| = pL$ exactly matches the random-placement
+budget while the rate $p$ remains continuously tunable; (iii) an
+equal-coverage control that visits
 every site exactly once per coverage period but in a shuffled order;
 (iv) greedy oracle placement at the sites of largest local entanglement,
 which uses quantum information unavailable to a physical observer; and
@@ -308,18 +326,45 @@ $L = 512$ chain reaches $S = 106$ bits, close to the predicted ceiling of
 $0.46/p = 115$ bits, and for $p \ge 0.05$ the entropy is size independent
 within error bars across $L = 64$--$512$.
 
-These observations follow from a ballistic argument. A sweep at rate $p$
-revisits any given site every $1/p$ layers, independent of $L$. Between
-visits, entanglement across a cut regrows at most ballistically,
-$S \sim v_E t$, so the steady state saturates at
-$S_\mathrm{max} \sim v_E/p$ for any $L \gg 1/p$. The result is an area law
-at every fixed $p > 0$, that is, $p_c^{\rm sweep} = 0$ in the
-thermodynamic limit. The argument predicts the single-scale form
-$S = p^{-1} f(pL)$ with $f(x) \propto x$ at small $x$ and
-$f \to f_\infty$ at large $x$. This form collapses the data for
-$p \le 0.035$ across $L = 64$--$512$ (Fig.~\ref{fig:collapse}), with
-$f_\infty \approx 0.46$. Larger rates fall below the plateau, as expected
-outside the $p \to 0$ scaling regime.
+These observations follow from a ballistic argument, which we now state
+quantitatively. The sweep front advances $pL$ sites per layer on
+average, so it returns to any given cut after $1/p$ layers, independent
+of $L$. In the steady state, the time $\tau$ elapsed since the front
+last crossed a given cut is uniformly distributed on $[0, 1/p)$. Between
+passages, the entanglement across the cut regrows at most ballistically
+from the remainder $S_r$ left by the passage,
+$S(\tau) \le S_r + v_E\,\tau$, where $v_E$ is the entanglement growth
+velocity of the unitary dynamics. Averaging over $\tau$ gives the
+steady-state bound
+\begin{equation}
+\langle S \rangle \;\le\; S_r + \frac{v_E}{2p},
+\label{eq:ceiling}
+\end{equation}
+which is independent of $L$: an area law at every fixed $p > 0$, that
+is, $p_c^{\rm sweep} = 0$ in the thermodynamic limit. Finite systems
+interpolate between this ceiling and the volume law
+$S \approx s_v L/2$ of the weakly monitored regime, where
+$s_v \approx 0.46$ bits per site in our data. Equating the two scales
+gives the crossover condition $s_v L/2 \sim f_\infty/p$, that is,
+$pL = O(1)$: the only scale in the problem is $1/p$, and the scaling
+form
+\begin{equation}
+S(p, L) = \frac{1}{p}\, f(pL),
+\quad
+f(x) \xrightarrow{\,x \to 0\,} \frac{s_v x}{2},
+\quad
+f(x) \xrightarrow{\,x \to \infty\,} f_\infty,
+\label{eq:scaling}
+\end{equation}
+follows. Two independent checks confirm Eq.~\eqref{eq:scaling}. First,
+it collapses the data for $p \le 0.035$ across $L = 64$--$512$
+(Fig.~\ref{fig:collapse}), with $f_\infty \approx 0.46$. Second, it
+predicts that finite-size $\I_3$ crossings occur at fixed $p^\ast L$,
+that is, $p^\ast \propto 1/L$ rather than $p^\ast \to \mathrm{const}$ as
+in Eq.~\eqref{eq:fss}; the measured crossings satisfy
+$p^\ast \sqrt{L_1 L_2} \approx 0.75$, an $O(1)$ constant, as predicted.
+Rates outside the $p \to 0$ scaling regime fall below the plateau, as
+expected from lattice-scale corrections.
 
 The coefficient can be checked against an independent measurement. In the
 unitary circuit ($p = 0$) we measure an entanglement growth velocity
@@ -375,12 +420,42 @@ approximately one bit per measurement.}
 \label{fig:ledger}
 \end{figure}
 
+The lemma of Sec.~\ref{sec:model} has a consequence that bounds what any
+placement policy can achieve per recorded bit.
+
+\emph{Proposition (one bit per bit).} In stabilizer dynamics, a
+deterministic single-site measurement leaves $S_A$ unchanged for every
+region $A$, and a nondeterministic one changes each $S_A$ by $0$ or
+$-1$. Consequently, along any trajectory, the total entanglement removed
+by measurements across any fixed cut is bounded by the record entropy:
+\begin{equation}
+\Delta S_{\rm meas} \;\le\; H_{\rm rec}.
+\label{eq:onebit}
+\end{equation}
+
+\emph{Proof.} If the outcome is deterministic, $\pm Z_q$ is in the
+stabilizer group, the projector acts as the identity on the state, and
+no entropy changes. If the outcome is random, the generators can be
+chosen so that exactly one anticommutes with $Z_q$, and the measurement
+replaces that single generator by $\pm Z_q$. The generator matrices
+before and after differ in one row, so
+$\mathrm{rank}_{\mathrm{GF}(2)}(G|_A)$ in Eq.~\eqref{eq:rank} changes by
+at most one, and since the two outcomes yield identical entropies,
+monotonicity of entanglement under local operations forbids an increase.
+Summing over the measurements of a trajectory and counting one bit per
+random outcome (the lemma) gives Eq.~\eqref{eq:onebit}. \hfill$\square$
+
+A policy's information efficiency $\eta = \Delta S_{\rm meas} / H_{\rm rec}
+\le 1$ measures how much of the theoretical one-bit-per-bit budget it
+converts into disentanglement.
+
 Figure~\ref{fig:ledger} accounts for the placement protocols on this
 ledger at $L = 64$. The left panel plots the steady-state entropy against
 the record entropy per site-layer, parametrically in $p$. The sweep
 dominates the frontier: at every record-entropy budget it reaches a lower
-entanglement entropy than random placement. The right panel explains what
-the advantage is not. Both protocols pay close to one bit per measurement
+entanglement entropy than random placement, that is, it operates closer
+to the $\eta = 1$ bound of Eq.~\eqref{eq:onebit}. The right panel
+explains what the advantage is not. Both protocols pay close to one bit per measurement
 across the full range of rates, because in and near the volume-law regime
 almost every measured outcome is nondeterministic. The sweep does not buy
 cheaper information; it allocates equally priced bits better.
@@ -573,17 +648,34 @@ and 10 to 12 iterations of 16 to 24 evaluation episodes.
 \emph{PPO policy.} Two circular convolutions (kernel 3, 32 channels,
 ReLU) produce per-site embeddings; their mean feeds a GRU cell (32
 hidden units) whose state is broadcast back to every site; a
-$1\times 1$ convolution over the concatenation yields per-site logits,
-and a linear head on the pooled representation yields the value estimate.
-Actions are $k$ sites sampled without replacement by sequential softmax
-(Plackett--Luce), whose log-probability is the sum of the conditional
-log-probabilities. Training: Adam with learning rate $3\times 10^{-4}$,
-discount $\gamma = 0.995$, GAE $\lambda = 0.95$, clip $0.2$, entropy
-bonus $0.01$, value coefficient $0.5$, 4 epochs per update, 64 episodes
-per update, 400 updates. The reward is the per-layer decrease of the
-half-cut entropy, plus the negative final half-cut entropy at the
-terminal step. Reward shaping uses quantum-side information during
-training only; the deployed policy acts on classical features alone.
+$1\times 1$ convolution over the concatenation yields per-site logits
+$\ell_i$, and a linear head on the pooled representation yields the
+value estimate. Actions are $k$ distinct sites sampled without
+replacement by sequential softmax (Plackett--Luce),
+\begin{equation}
+\pi_\theta(a_1, \ldots, a_k \mid s)
+ = \prod_{j=1}^{k}
+   \frac{e^{\ell_{a_j}}}
+        {\sum_{i \notin \{a_1, \ldots, a_{j-1}\}} e^{\ell_i}},
+\label{eq:pl}
+\end{equation}
+whose log-probability is exact, as required by the PPO objective
+\begin{equation}
+\mathcal{L}(\theta) = \mathbb{E}_t\!\left[
+ \min\!\big(r_t(\theta) \hat A_t,\;
+ \mathrm{clip}(r_t(\theta), 1{-}\epsilon, 1{+}\epsilon)\, \hat A_t\big)
+\right],
+\label{eq:ppo}
+\end{equation}
+where $r_t(\theta) = \pi_\theta(a_t|s_t)/\pi_{\theta_{\rm old}}(a_t|s_t)$
+and $\hat A_t$ is the generalized advantage estimate. Training: Adam
+with learning rate $3\times 10^{-4}$, discount $\gamma = 0.995$, GAE
+$\lambda = 0.95$, clip $\epsilon = 0.2$, entropy bonus $0.01$, value
+coefficient $0.5$, 4 epochs per update, 64 episodes per update, 400
+updates. The reward is the per-layer decrease of the half-cut entropy,
+plus the negative final half-cut entropy at the terminal step. Reward
+shaping uses quantum-side information during training only; the deployed
+policy acts on classical features alone.
 
 \bibliography{refs}
 
