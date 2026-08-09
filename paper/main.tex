@@ -263,17 +263,69 @@ effective placement at this granularity: geometry is.
 \section{Learned placement policies}
 \label{sec:learned}
 
-\todo{CEM linear policy: fencing behavior, fig4 spacetime. PPO
-(circular-conv + GRU, Plackett--Luce top-$k$): a short CPU run (about 1.3k
-episodes, $L{=}16$, $k{=}2$) plateaued at $S \approx 3.3$, indistinguishable
-from random placement and below the CEM linear policy (2.77); the pattern is
-diffuse, with no sweeping or fencing (fig8). Treat as compute limited; HYAK
-run (400 updates $\times$ 64 episodes, shaped rewards) pending. If
-large-scale PPO still fails to rediscover the sweep despite staleness
-features, reframe: myopic shaped rewards make time-coherent placement
-strategies hard to learn, and the sweep sits in a poorly connected region
-of policy space. The sweep is the classical-information baseline to beat;
-oracle greedy shows that myopic quantum information is insufficient.}
+We ask whether placement structure can be learned rather than designed.
+Policies observe only classical record features per site: time since the
+site was last measured, last outcome, empirical outcome bias, neighbor
+staleness, and layer parity. Actions select $k$ distinct sites per layer,
+so all comparisons remain at matched budget.
+
+We train two policy classes to minimize the final half-cut entropy. The
+first is a linear scoring policy (top-$k$ over a linear function of the
+site features) trained with the cross-entropy method. The second is a
+translation-equivariant circular convolutional network with a recurrent
+(GRU) global memory, trained with PPO; actions are sampled without
+replacement through a Plackett--Luce factorization, which gives exact
+log-probabilities. The recurrent state exists precisely so that the policy
+class can express time-advancing patterns such as sweeps. Training used
+400 updates of 64 episodes (25{,}600 episodes) at $L = 32$, $k = 4$,
+$T = 128$, with per-layer entropy-difference reward shaping.
+
+Table~\ref{tab:learned} reports matched-budget evaluations. The CEM linear
+policy improves modestly on random placement and converges to a
+``fencing'' strategy: it pins measurements at a small set of fixed sites
+and quarantines entanglement between them (Fig.~\ref{fig:spacetime}).
+Fencing is locally sensible and globally suboptimal. The PPO policy, given
+$19\times$ more episodes and a policy class that contains moving patterns,
+does not improve on random placement ($5.17 \pm 0.12$ against
+$5.34 \pm 0.08$), and its training curve is flat over the final 300
+updates. Its stochasticity is doing the work: decoding the same policy
+greedily performs worse ($6.28 \pm 0.15$) and writes fewer random bits to
+the record, indicating collapse onto repeatedly measured sites, the
+fencing failure mode again. The sweep outperforms every learned and
+informed policy by more than a factor of two.
+
+\begin{table}
+\caption{Final half-cut entropy at matched budget
+($L = 32$, $k = 4$, $T = 128$; mean $\pm$ s.e.m.).}
+\label{tab:learned}
+\begin{ruledtabular}
+\begin{tabular}{lcc}
+Policy & Information used & $\langle S(L/2)\rangle$ [bits] \\
+\hline
+Random placement       & none      & $5.34 \pm 0.08$ \\
+Shuffled coverage      & none      & $4.95 \pm 0.09$ \\
+PPO (stochastic)       & classical & $5.17 \pm 0.12$ \\
+PPO (greedy decoding)  & classical & $6.28 \pm 0.15$ \\
+Oracle greedy          & quantum   & $4.45 \pm 0.18$ \\
+Sweep                  & none      & $2.00 \pm 0.07$ \\
+\end{tabular}
+\end{ruledtabular}
+\end{table}
+
+We read this as a statement about optimization geometry rather than about
+expressivity. The sweep is representable in the PPO policy class: strong
+weight on the staleness feature with a stable tie-breaking direction
+implements it. The learning signal, however, is nearly myopic. One
+measurement moved by one site changes the final entropy little, so the
+reward landscape around unstructured policies is flat, while the sweep's
+advantage is a property of a long temporally coherent trajectory of
+placements. Local policy improvement does not assemble such trajectories
+from unstructured starting points, and both of our learners instead find
+the nearest attractor, fencing, which is a static approximation to
+cutting. Learning where to measure is therefore hard not because good
+strategies are complex but because their value is invisible to myopic
+credit assignment. \todo{optional: seed PPO from a sweep-like
+initialization and test stability of the optimum}
 
 \section{Discussion}
 \label{sec:discussion}
