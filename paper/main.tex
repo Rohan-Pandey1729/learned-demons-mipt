@@ -91,8 +91,12 @@ classical measurement record and decides where to look next. In stabilizer
 dynamics the demon's ledger can be kept exactly, because each outcome
 carries either zero or exactly one bit of Shannon entropy.
 
-The paper is organized as follows. Section~\ref{sec:model} defines the
-model, the placement policies, and the exact record-entropy ledger.
+The paper is organized as follows. Section~\ref{sec:background} reviews
+the concepts and quantities used throughout: entanglement entropy and its
+scaling laws, monitored circuits, the stabilizer formalism, the
+tripartite mutual information, Landauer's principle, and the policy
+optimization methods. Section~\ref{sec:model} defines the model, the
+placement policies, and the exact record-entropy ledger.
 Section~\ref{sec:geometry} contains the main result: at matched budget, a
 deterministic sweeping placement eliminates the volume-law phase, with
 finite-size crossings receding as $1/L$ and a single-parameter scaling
@@ -103,6 +107,96 @@ that policies trained by reinforcement learning fail to discover the
 sweep and analyzes why. Section~\ref{sec:discussion} discusses
 implications and open questions. Appendices~\ref{app:numerics}
 and~\ref{app:learning} give numerical and training details.
+
+\section{Background}
+\label{sec:background}
+
+\subsection{Entanglement entropy and its scaling}
+For a pure state $|\psi\rangle$ of a chain partitioned into a region $A$
+and its complement $B$, the entanglement entropy of $A$ is the von
+Neumann entropy of the reduced density matrix,
+\begin{equation}
+S_A = -\mathrm{Tr}\,(\rho_A \log_2 \rho_A),
+\qquad
+\rho_A = \mathrm{Tr}_B\, |\psi\rangle\langle\psi|,
+\label{eq:vn}
+\end{equation}
+measured here in bits. Its dependence on the subsystem size
+distinguishes phases of dynamics. In a volume-law phase $S_A$ grows
+proportionally to the number of sites in $A$, as it does in the
+steady state of generic unitary dynamics. In an area-law phase $S_A$
+saturates to a constant independent of subsystem size. In one dimension
+the boundary of a contiguous region is a pair of points, so area law
+means $S_A = O(1)$.
+
+\subsection{Monitored circuits and the MIPT}
+A monitored circuit alternates entangling unitary gates with local
+projective measurements applied at rate $p$. Each sequence of measurement
+outcomes defines a quantum trajectory, and observables are averaged over
+trajectories and circuit realizations. Unitary gates spread entanglement
+ballistically while measurements remove it locally, and the competition
+produces the measurement-induced phase transition: a volume-law phase for
+$p < p_c$ and an area-law phase for
+$p > p_c$~\cite{Li2018,Skinner2019,Chan2019}. For the brickwork random
+Clifford circuit studied here, $p_c \approx 0.16$~\cite{Zabalo2020}.
+
+\subsection{Stabilizer states and Clifford circuits}
+A stabilizer state on $n$ qubits is the unique joint $+1$ eigenstate of
+an abelian group $S$ of $n$ independent commuting Pauli operators, its
+stabilizer group. Clifford gates map Pauli operators to Pauli operators
+and therefore map stabilizer states to stabilizer states, which allows
+classical simulation in polynomial time~\cite{AaronsonGottesman2004}.
+Writing each of the $n$ generators as a binary vector of $X$ and $Z$
+components yields the generator matrix $G$ with $n$ rows and $2n$
+columns. Entanglement entropies are then exact rank
+computations~\cite{Fattal2004}:
+\begin{equation}
+S_A = \mathrm{rank}_{\mathrm{GF}(2)}\!\left(G|_A\right) - |A|,
+\label{eq:rank}
+\end{equation}
+where $G|_A$ keeps the columns supported on $A$ and arithmetic is
+modulo 2. All entropies in this work are computed from
+Eq.~\eqref{eq:rank}, with no sampling error beyond the trajectory
+ensemble.
+
+\subsection{Tripartite mutual information}
+Locating $p_c$ from $S_A$ directly is contaminated by boundary
+contributions. The standard diagnostic subtracts them. For contiguous
+quarters $A$, $B$, $C$, $D$ of the chain, the tripartite mutual
+information is
+\begin{equation}
+\I_3 = S_A + S_B + S_C - S_{AB} - S_{AC} - S_{BC} + S_{ABC}.
+\label{eq:i3}
+\end{equation}
+Boundary-law terms cancel in this combination, so $\I_3 \to 0$ in the
+area-law phase, while in the volume-law phase $\I_3$ is negative and
+extensive. Curves of $\I_3(p)$ for different system sizes cross at the
+critical point, and the crossings of successive size pairs converge to
+$p_c$~\cite{Gullans2020,Zabalo2020}. The drift of these crossings with
+system size is the key diagnostic in Sec.~\ref{sec:geometry}.
+
+\subsection{Maxwell's demon and Landauer's principle}
+A Maxwell demon is an agent that uses measurement information to reduce
+the entropy of a system. The resolution of the associated paradox is
+bookkeeping: the demon must record outcomes, and by Landauer's principle
+erasing one bit of record costs at least $k_B T \ln 2$ of dissipated
+heat~\cite{Landauer1961,Bennett1982}. A consistent account of any
+measurement-based protocol therefore weighs the entropy it removes
+against the record entropy it writes. Section~\ref{sec:model} shows that
+in stabilizer dynamics this record entropy is exactly countable, and
+Sec.~\ref{sec:ledger} uses it to compare placement policies.
+
+\subsection{Policy optimization}
+A placement policy is a map from an observation to a choice of $k$
+measurement sites, and an episode is one circuit run scored by a reward,
+here the negative final half-cut entropy. We use two standard
+optimizers. The cross-entropy method (CEM) is gradient free: it samples
+policy parameters from a Gaussian, keeps the best-scoring fraction, and
+refits the Gaussian to the elite set. Proximal policy optimization (PPO)
+is a policy-gradient method that ascends the reward while clipping each
+update to remain close to the current policy, which stabilizes training.
+Both optimize the same objective at matched measurement budget; details
+appear in Appendix~\ref{app:learning}.
 
 \section{Model and methods}
 \label{sec:model}
@@ -120,13 +214,11 @@ every site exactly once per coverage period but in a shuffled order;
 (iv) greedy oracle placement at the sites of largest local entanglement,
 which uses quantum information unavailable to a physical observer; and
 (v) learned policies restricted to classical record information
-(Sec.~\ref{sec:learned}). Entanglement entropies of stabilizer states are
-computed exactly via $\mathrm{GF}(2)$ ranks~\cite{Fattal2004}, and
-simulations use \texttt{stim}~\cite{AaronsonGottesman2004,Gidney2021}. We
-use circuit depth $T = 4L$ and locate transitions with the tripartite
-mutual information $\I_3$ of contiguous quarters, whose crossings for
-different $L$ identify $p_c$~\cite{Gullans2020,Zabalo2020}. Details are
-given in Appendix~\ref{app:numerics}.
+(Sec.~\ref{sec:learned}). Entanglement entropies are computed exactly
+from Eq.~\eqref{eq:rank}, and simulations use
+\texttt{stim}~\cite{AaronsonGottesman2004,Gidney2021}. We use circuit
+depth $T = 4L$ and locate transitions with the $\I_3$ crossings of
+Eq.~\eqref{eq:i3}. Details are given in Appendix~\ref{app:numerics}.
 
 \subsection{An exact information ledger}
 The following standard fact makes the demon's ledger exact in stabilizer
@@ -427,9 +519,8 @@ preparation; the author directed this work and verified all results.
 \end{acknowledgments}
 
 \section*{Data and code availability}
-All simulation code, trained policies, and the data behind every figure
-are available at
-\url{https://github.com/Rohan-Pandey1729/learned-demons-mipt}.
+The simulation code, trained policies, and the data behind the figures
+are provided upon request.
 
 \appendix
 
@@ -443,12 +534,9 @@ two-qubit Clifford gates to even bonds on even layers and odd bonds
 follow each gate layer according to the placement process. All runs use
 depth $T = 4L$ from the product initial state $|0\rangle^{\otimes L}$.
 
-\emph{Entropies.} For a pure stabilizer state with generator matrix $G$
-($n$ rows, binary symplectic columns), the entanglement entropy of a
-region $A$ is $S_A = \mathrm{rank}_{\mathrm{GF}(2)}(G|_A) - |A|$
-bits~\cite{Fattal2004}. The tripartite mutual information is
-$\I_3(A{:}B{:}C) = S_A + S_B + S_C - S_{AB} - S_{AC} - S_{BC} + S_{ABC}$
-for contiguous quarters $A, B, C, D$.
+\emph{Entropies.} All entropies use Eq.~\eqref{eq:rank} on the canonical
+stabilizer generators; $\I_3$ uses Eq.~\eqref{eq:i3} with contiguous
+quarters $A, B, C, D$.
 
 \emph{Crossings.} A sign change of
 $\I_3^{(L_1)}(p) - \I_3^{(L_2)}(p)$ between grid points counts as a
