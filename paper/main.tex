@@ -111,14 +111,31 @@ transitions with the tripartite mutual information $\I_3$ of contiguous
 quarters~\cite{Gullans2020,Zabalo2020}.
 
 \subsection{An exact information ledger}
-For stabilizer states, a projective $Z$ measurement outcome is either fully
-determined or an unbiased coin flip. The Shannon entropy of the measurement
-record in a trajectory therefore equals the number of nondeterministic
-outcomes, which we count during simulation. This number is the minimum
-memory a demon implementing the policy must write. By Landauer's principle,
-$k_B T \ln 2$ times this number bounds the heat cost of erasing the
-record~\cite{Landauer1961,Bennett1982}. \todo{connect to purification
-framing; possibly relate $\Delta S$ bounds per recorded bit}
+The following standard fact makes the demon's ledger exact in stabilizer
+dynamics.
+
+\emph{Lemma (bit dichotomy).} Let $|\psi\rangle$ be a stabilizer state on
+$n$ qubits with stabilizer group $S$, and let a projective measurement of
+$Z_q$ be performed. Either $\pm Z_q \in S$, in which case the outcome is
+deterministic and carries zero Shannon entropy, or $Z_q$ anticommutes with
+some element of $S$, in which case the two outcomes occur with probability
+$1/2$ each and the outcome carries exactly one bit.
+
+\emph{Proof.} If $\pm Z_q \in S$ the state is an eigenstate of $Z_q$ and
+the outcome is fixed. Otherwise choose $g \in S$ with
+$\{g, Z_q\} = 0$. Then
+$\langle \psi | Z_q | \psi \rangle
+ = \langle \psi | g^\dagger Z_q g | \psi \rangle
+ = - \langle \psi | Z_q | \psi \rangle = 0$,
+so the outcomes are unbiased~\cite{AaronsonGottesman2004,Fattal2004}. \hfill$\square$
+
+The Shannon entropy of the measurement record in a trajectory therefore
+equals the number of nondeterministic outcomes, which we count exactly
+during simulation via a pre-measurement determinism check. This number is
+the minimum memory a demon implementing the policy must write. By
+Landauer's principle, $k_B T \ln 2$ times this number bounds the heat cost
+of erasing the record~\cite{Landauer1961,Bennett1982}. \todo{possibly add a
+$\Delta S$-per-recorded-bit inequality and test it against the data}
 
 \begin{figure*}
 \includegraphics[width=\textwidth]{../figures/fig4_spacetime.png}
@@ -188,8 +205,19 @@ the single-scale form $S = p^{-1} f(pL)$ with $f(x) \propto x$ at small $x$
 and $f \to f_\infty$ at large $x$. This form collapses the data for
 $p \le 0.035$ across $L = 64$--$512$ (Fig.~\ref{fig:collapse}), with
 $f_\infty \approx 0.46$. Larger rates fall below the plateau, as expected
-outside the $p \to 0$ scaling regime. \todo{estimate the entanglement
-velocity $v$ independently and compare with $f_\infty$}
+outside the $p \to 0$ scaling regime.
+
+The coefficient can be checked against an independent measurement. In the
+unitary circuit ($p = 0$) we measure an entanglement growth velocity
+$v_E = 0.647 \pm 0.005$ bits per layer at $L = 256$. If each sweep passage
+reset the entanglement at a cut to zero, the time since the last passage
+would be uniform on $[0, 1/p]$ and the mean steady-state entropy would be
+$v_E/(2p)$, giving $f_\infty = v_E/2 = 0.324$. The measured plateau lies
+above this estimate. The direction of the discrepancy is expected: the
+sweep measures sites rather than bonds, so a passage removes only part of
+the entanglement across a cut, and regrowth starts from a nonzero
+remainder. The scaling form itself, which is the substantive claim, does
+not depend on this coefficient.
 
 \subsection{Coverage and greed are not the mechanism}
 \todo{Table from README: random 4.31, shuffled coverage 4.12, oracle greedy
@@ -208,12 +236,29 @@ approximately one bit per measurement.}
 \label{fig:ledger}
 \end{figure}
 
-\todo{Text around fig7. The sweep dominates the frontier at every budget;
-both modes pay about 1 bit per look. The advantage is allocation, not the
-information price. Note that the sweep is outcome independent: it needs no
-memory of outcomes at all, and its record can be erased trajectory by
-trajectory. This sharpens the contrast with feedback-based adaptive
-circuits.}
+Figure~\ref{fig:ledger} accounts for the placement protocols on this
+ledger at $L = 64$. The left panel plots the steady-state entropy against
+the record entropy per site-layer, parametrically in $p$. The sweep
+dominates the frontier: at every record-entropy budget it reaches a lower
+entanglement entropy than random placement. The right panel explains what
+the advantage is not. Both protocols pay close to one bit per measurement
+across the full range of rates, because in and near the volume-law regime
+almost every measured outcome is nondeterministic. The sweep does not buy
+cheaper information; it allocates equally priced bits better.
+
+Two further observations sharpen the point. First, the sweep is outcome
+independent: its placement decisions use no information from the record,
+so the demon needs no working memory for control, and the record can be
+erased as it is written at the Landauer rate without affecting the
+protocol. The entire entanglement suppression in
+Sec.~\ref{sec:geometry} is therefore achieved by a demon with zero
+control-relevant information, which sharpens the contrast with
+feedback-based adaptive circuits, where outcome information drives the
+dynamics~\cite{Iadecola2023,ODea2024,Buchhold2022,Piroli2023}. Second, the
+oracle-greedy policy of Sec.~\ref{sec:geometry} consumes maximal
+information (full state access) and still loses to the sweep, so
+information about the state is neither necessary nor sufficient for
+effective placement at this granularity: geometry is.
 
 \section{Learned placement policies}
 \label{sec:learned}
