@@ -8,6 +8,13 @@
             urlcolor=blue!60!black}
 \graphicspath{{../figures/}{figures/}}
 
+% limit the stretch of the glue between floats and text so column balancing
+% does not open large gaps below figures
+\setlength{\textfloatsep}{12pt plus 2pt minus 3pt}
+\setlength{\floatsep}{10pt plus 2pt minus 2pt}
+\setlength{\intextsep}{10pt plus 2pt minus 2pt}
+\raggedbottom
+
 \newcommand{\I}{\mathcal{I}}
 
 \begin{document}
